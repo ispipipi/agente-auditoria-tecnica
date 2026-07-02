@@ -20,9 +20,12 @@ export function ResultPage() {
   const {
     overrides,
     getCaseById,
+    getCaseRoute,
+    getCaseState,
     getAgentAnalysis,
     getMarketPriceForCase,
     getFinalDecision,
+    getRecommendedCase,
     confirmAgentDecision,
     saveOverride,
   } = useDemo();
@@ -41,6 +44,9 @@ export function ResultPage() {
   const marketInfo = getMarketPriceForCase(caseItem);
   const override = overrides[caseItem.idTicket];
   const finalDecision = getFinalDecision(caseItem);
+  const caseState = getCaseState(caseItem);
+  const isClosed = caseState.status === "closed";
+  const nextCase = getRecommendedCase(caseItem.idTicket);
   const effectiveDecision = override?.decisionFinal ?? analysis.decision;
   const finalSummary =
     effectiveDecision === DECISION_LABELS.repair
@@ -54,7 +60,9 @@ export function ResultPage() {
 
   function handleApprove() {
     confirmAgentDecision(caseItem);
-    navigate("/");
+    setShowOverrideForm(false);
+    setComment("");
+    setError("");
   }
 
   function handleOverrideSubmit(event) {
@@ -66,7 +74,9 @@ export function ResultPage() {
     }
 
     saveOverride(caseItem, selectedDecision, comment.trim());
-    navigate("/");
+    setShowOverrideForm(false);
+    setComment("");
+    setError("");
   }
 
   return (
@@ -75,151 +85,123 @@ export function ResultPage() {
         caseItem={caseItem}
         currentStep={3}
         eyebrow="Paso 4"
-        title="Resultado, override y exportacion"
+        title="Cierre del caso, override y salida de demo"
         aside={
-          <div className="space-y-4">
-            <div className="rounded-2xl bg-mist p-4">
-              <p className="text-xs uppercase tracking-[0.24em] text-muted">Decision agente</p>
-              <p className="mt-2 text-sm font-semibold text-slate-950">{analysis.decision}</p>
-            </div>
-            <div className="rounded-2xl bg-mist p-4">
-              <p className="text-xs uppercase tracking-[0.24em] text-muted">Decision final</p>
-              <p className="mt-2 text-sm font-semibold text-slate-950">{finalDecision}</p>
-            </div>
-            <div className="rounded-2xl bg-mist p-4">
-              <p className="text-xs uppercase tracking-[0.24em] text-muted">Intervencion humana</p>
-              <p className="mt-2 text-sm font-semibold text-slate-950">
-                {interventionLabel}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-mist p-4">
-              <p className="text-xs uppercase tracking-[0.24em] text-muted">Exportacion</p>
-              <p className="mt-2 text-sm font-semibold text-slate-950">
-                Vista lista para impresion o PDF
-              </p>
-            </div>
+          <div className="insight-stack">
+            <InsightTile label="Decision agente" value={analysis.decision} />
+            <InsightTile label="Decision final" value={finalDecision} />
+            <InsightTile label="Intervencion humana" value={interventionLabel} />
+            <InsightTile label="Exportacion" value="Vista lista para impresion o PDF" />
           </div>
         }
       >
         <div className="space-y-6">
-          <div className="screen-only executive-panel rounded-[28px] border border-cyan-100 p-6 shadow-soft">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-accent/70">
-                  Instruccion final para sponsor
-                </p>
-                <h3 className="mt-3 font-display text-3xl font-bold tracking-[-0.05em] text-slate-950">
-                  {effectiveDecision}
-                </h3>
-                <p className="mt-3 max-w-3xl text-sm leading-7 text-muted">{finalSummary}</p>
-              </div>
-              <CaseStatusBadge decision={effectiveDecision} />
+          <div className="closure-banner">
+            <div>
+              <p className="section-kicker">Resultado consolidado</p>
+              <h3 className="closure-title">{effectiveDecision}</h3>
+              <p className="section-copy">{finalSummary}</p>
             </div>
-
-            <div className="mt-5 grid gap-3 md:grid-cols-3">
-              <ExecutiveMetric
-                label="Cierre recomendado"
-                value={effectiveDecision}
-              />
-              <ExecutiveMetric
-                label="Origen de la decision"
-                value={override?.intervencionHumana ? "Analista con override" : "Agente automatico"}
-              />
-              <ExecutiveMetric
-                label="Fecha del informe"
-                value={formatDate(caseItem.fechaVisita)}
-              />
-            </div>
+            <CaseStatusBadge decision={effectiveDecision} />
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-soft">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          {isClosed ? (
+            <div className="success-strip">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted">
-                  Resultado consolidado
+                <p className="section-kicker">Caso cerrado</p>
+                <h3 className="section-title small">La simulacion ya registro el cierre de este ticket</h3>
+                <p className="section-copy">
+                  Puedes volver a la bandeja o continuar con el siguiente caso recomendado para
+                  completar la demo end-to-end.
                 </p>
-                <h3 className="mt-3 text-3xl font-bold tracking-[-0.05em] text-slate-950">
-                  {caseItem.tipoArtefacto} {caseItem.marca} {caseItem.modelo}
-                </h3>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-muted">{analysis.narrative}</p>
               </div>
-              <CaseStatusBadge decision={finalDecision} />
-            </div>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <SummaryCard label="Ticket" value={caseItem.idTicket} />
-              <SummaryCard label="Presupuesto reparacion" value={formatCurrency(caseItem.presupuestoReparacion)} />
-              <SummaryCard label="Precio de mercado" value={formatCurrency(marketInfo.value)} />
-              <SummaryCard
-                label="Umbral 70%"
-                value={formatCurrency(analysis.financial.threshold)}
-              />
-            </div>
-
-            <div className="mt-5 rounded-[24px] border border-slate-200 bg-mist p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted">
-                Nota ejecutiva
-              </p>
-              <p className="mt-3 text-sm leading-7 text-slate-950">
-                {override?.intervencionHumana
-                  ? `La decision final fue ajustada por analista. Motivo registrado: ${override.comentarioOverride}`
-                  : "La decision final coincide con la recomendacion automatica del agente y ya esta lista para presentacion."}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-5 xl:grid-cols-2">
-            <div className="rounded-[28px] border border-slate-200 bg-mist p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted">
-                Trazabilidad del analisis
-              </p>
-              <ol className="mt-5 space-y-4">
-                <TimelineItem
-                  title="Extraccion"
-                  body={
-                    analysis.missingFields.length > 0
-                      ? `Faltan campos obligatorios: ${analysis.missingFields.join(", ")}.`
-                      : "Documento completo para continuar con el flujo normal."
-                  }
-                />
-                <TimelineItem
-                  title="Matriz de decision"
-                  body={`Aceptacion: ${
-                    analysis.acceptanceMatches.join(", ") || "sin coincidencias"
-                  }. Rechazo: ${analysis.rejectionMatches.join(", ") || "sin coincidencias"}.`}
-                />
-                <TimelineItem
-                  title="Regla financiera"
-                  body={analysis.financial.summary}
-                />
-                <TimelineItem
-                  title="Decision del agente"
-                  body={analysis.decision}
-                />
-              </ol>
-            </div>
-
-            <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-soft">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted">
-                Intervencion humana
-              </p>
-              <p className="mt-3 text-sm leading-7 text-muted">
-                Puedes aprobar la salida del agente o reemplazarla por una decision final distinta con trazabilidad obligatoria.
-              </p>
-              <div className="mt-5 space-y-4">
-                <button className="primary-button w-full" onClick={handleApprove} type="button">
-                  Aprobar decision del agente
+              <div className="hero-actions">
+                <button className="secondary-button" onClick={() => navigate("/")} type="button">
+                  Volver a bandeja
                 </button>
                 <button
-                  className="secondary-button w-full"
-                  onClick={() => {
-                    setSelectedDecision(finalDecision);
-                    setShowOverrideForm(true);
-                  }}
+                  className="primary-button"
+                  onClick={() => navigate(getCaseRoute(nextCase))}
                   type="button"
                 >
-                  Anular / Modificar decision
+                  Abrir siguiente caso
                 </button>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="analysis-grid">
+            <div className="analysis-column">
+              <div className="info-card">
+                <div className="summary-grid">
+                  <SummaryCard label="Ticket" value={caseItem.idTicket} />
+                  <SummaryCard label="Presupuesto reparacion" value={formatCurrency(caseItem.presupuestoReparacion)} />
+                  <SummaryCard label="Precio de mercado" value={formatCurrency(marketInfo.value)} />
+                  <SummaryCard label="Umbral 70%" value={formatCurrency(analysis.financial.threshold)} />
+                </div>
+
+                <div className="note-panel">
+                  <p className="field-label">Nota ejecutiva</p>
+                  <p className="note-copy">
+                    {override?.intervencionHumana
+                      ? `La decision final fue ajustada por analista. Motivo registrado: ${override.comentarioOverride}`
+                      : "La decision final coincide con la recomendacion automatica del agente y queda lista para presentacion."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="info-card">
+                <p className="section-kicker">Trazabilidad del analisis</p>
+                <ol className="trace-list">
+                  <TimelineItem
+                    title="Extraccion documental"
+                    body={
+                      analysis.missingFields.length > 0
+                        ? `Faltan campos obligatorios: ${analysis.missingFields.join(", ")}.`
+                        : "Documento completo para continuar con el flujo normal."
+                    }
+                  />
+                  <TimelineItem
+                    title="Matriz tecnica"
+                    body={`Aceptacion: ${
+                      analysis.acceptanceMatches.join(", ") || "sin coincidencias"
+                    }. Rechazo: ${analysis.rejectionMatches.join(", ") || "sin coincidencias"}.`}
+                  />
+                  <TimelineItem title="Regla financiera" body={analysis.financial.summary} />
+                  <TimelineItem title="Decision del agente" body={analysis.decision} />
+                </ol>
+              </div>
+            </div>
+
+            <div className="analysis-column">
+              <div className="info-card">
+                <p className="section-kicker">Intervencion humana</p>
+                <h3 className="section-title small">Control final antes del cierre</h3>
+                <p className="section-copy">
+                  Puedes aprobar la salida del agente o reemplazarla por una decision final distinta
+                  con trazabilidad obligatoria.
+                </p>
+
+                {!isClosed ? (
+                  <div className="action-stack">
+                    <button className="primary-button w-full" onClick={handleApprove} type="button">
+                      Aprobar decision del agente
+                    </button>
+                    <button
+                      className="secondary-button w-full"
+                      onClick={() => {
+                        setSelectedDecision(finalDecision);
+                        setShowOverrideForm(true);
+                      }}
+                      type="button"
+                    >
+                      Anular / Modificar decision
+                    </button>
+                  </div>
+                ) : (
+                  <div className="closed-badge-box">Estado actual: caso cerrado en simulacion</div>
+                )}
+
                 <button
                   className="secondary-button print-hidden w-full"
                   onClick={() => window.print()}
@@ -227,75 +209,67 @@ export function ResultPage() {
                 >
                   Imprimir / guardar PDF
                 </button>
+
+                {showOverrideForm ? (
+                  <form className="override-form" onSubmit={handleOverrideSubmit}>
+                    <label className="block">
+                      <span className="form-label">Nueva decision</span>
+                      <select
+                        className="form-input mt-2"
+                        onChange={(event) => setSelectedDecision(event.target.value)}
+                        value={selectedDecision}
+                      >
+                        {overrideOptions.map((option) => (
+                          <option key={option} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block">
+                      <span className="form-label">Justificacion del override</span>
+                      <textarea
+                        className="form-input mt-2 min-h-28"
+                        onChange={(event) => {
+                          setComment(event.target.value);
+                          if (error) setError("");
+                        }}
+                        placeholder="Explica por que la decision automatica debe cambiarse."
+                        value={comment}
+                      />
+                    </label>
+
+                    {error ? <p className="text-sm font-semibold text-reject">{error}</p> : null}
+
+                    <button className="primary-button w-full" type="submit">
+                      Confirmar override y cerrar caso
+                    </button>
+                  </form>
+                ) : null}
+
+                {override?.intervencionHumana ? (
+                  <div className="note-panel">
+                    <p className="field-label">Ultima justificacion registrada</p>
+                    <p className="note-copy">{override.comentarioOverride}</p>
+                  </div>
+                ) : null}
               </div>
 
-              {showOverrideForm ? (
-                <form
-                  className="mt-5 space-y-4 rounded-[24px] border border-slate-100 bg-mist/70 p-5"
-                  onSubmit={handleOverrideSubmit}
-                >
-                  <label className="block">
-                    <span className="text-sm font-semibold text-slate-950">Nueva decision</span>
-                    <select
-                      className="form-input mt-2"
-                      onChange={(event) => setSelectedDecision(event.target.value)}
-                      value={selectedDecision}
-                    >
-                      {overrideOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label className="block">
-                    <span className="text-sm font-semibold text-slate-950">
-                      Justificacion del override
-                    </span>
-                    <textarea
-                      className="form-input mt-2 min-h-28"
-                      onChange={(event) => {
-                        setComment(event.target.value);
-                        if (error) setError("");
-                      }}
-                      placeholder="Explica por que la decision automatica debe cambiarse."
-                      value={comment}
-                    />
-                  </label>
-
-                  {error ? <p className="text-sm font-semibold text-reject">{error}</p> : null}
-
-                  <button className="primary-button w-full" type="submit">
-                    Confirmar override
-                  </button>
-                </form>
-              ) : null}
-
-              {override?.intervencionHumana ? (
-                <div className="mt-5 rounded-[24px] bg-mist p-4">
-                  <p className="text-xs uppercase tracking-[0.24em] text-muted">
-                    Ultima justificacion registrada
-                  </p>
-                  <p className="mt-2 text-sm leading-7 text-slate-950">
-                    {override.comentarioOverride}
-                  </p>
+              <div className="print-only info-card">
+                <p className="section-kicker">Resumen imprimible</p>
+                <h3 className="section-title small">{effectiveDecision}</h3>
+                <p className="section-copy">{finalSummary}</p>
+                <div className="summary-grid two-columns">
+                  <SummaryCard label="Cliente" value={caseItem.nCliente} />
+                  <SummaryCard label="Fecha visita" value={formatDate(caseItem.fechaVisita)} />
+                  <SummaryCard
+                    label="Artefacto"
+                    value={`${caseItem.tipoArtefacto} ${caseItem.marca} ${caseItem.modelo}`}
+                  />
+                  <SummaryCard label="Intervencion humana" value={interventionLabel} />
                 </div>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="print-only rounded-[28px] border border-slate-200 bg-white p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted">
-              Resumen imprimible
-            </p>
-            <h3 className="mt-3 text-2xl font-bold text-slate-950">{effectiveDecision}</h3>
-            <p className="mt-3 text-sm leading-7 text-muted">{finalSummary}</p>
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <SummaryCard label="Cliente" value={caseItem.nCliente} />
-              <SummaryCard label="Fecha visita" value={formatDate(caseItem.fechaVisita)} />
-              <SummaryCard label="Artefacto" value={`${caseItem.tipoArtefacto} ${caseItem.marca} ${caseItem.modelo}`} />
-              <SummaryCard label="Intervencion humana" value={interventionLabel} />
+              </div>
             </div>
           </div>
         </div>
@@ -304,29 +278,29 @@ export function ResultPage() {
   );
 }
 
-function ExecutiveMetric({ label, value }) {
+function InsightTile({ label, value }) {
   return (
-    <div className="rounded-[22px] border border-white/90 bg-white/88 p-4 shadow-soft">
-      <p className="text-xs uppercase tracking-[0.24em] text-muted">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-slate-950">{value}</p>
+    <div className="insight-tile">
+      <p className="field-label">{label}</p>
+      <p className="field-value">{value}</p>
     </div>
   );
 }
 
 function SummaryCard({ label, value }) {
   return (
-    <div className="rounded-[24px] bg-mist p-4">
-      <p className="text-xs uppercase tracking-[0.24em] text-muted">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-slate-950">{value}</p>
+    <div className="field-card">
+      <p className="field-label">{label}</p>
+      <p className="field-value">{value}</p>
     </div>
   );
 }
 
 function TimelineItem({ title, body }) {
   return (
-    <li className="rounded-[24px] bg-white px-4 py-4 shadow-soft">
-      <p className="text-sm font-semibold text-slate-950">{title}</p>
-      <p className="mt-2 text-sm leading-7 text-muted">{body}</p>
+    <li className="trace-item">
+      <p className="check-title">{title}</p>
+      <p className="note-copy">{body}</p>
     </li>
   );
 }

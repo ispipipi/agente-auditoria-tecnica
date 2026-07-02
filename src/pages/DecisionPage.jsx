@@ -28,7 +28,7 @@ export function DecisionPage() {
         caseItem={caseItem}
         currentStep={1}
         eyebrow="Paso 2"
-        title="Matriz de decision logica"
+        title="Criterio tecnico y matriz de decision"
         actions={
           positiveFlow ? (
             <Link className="primary-button" to={`/caso/${caseItem.idTicket}/financiero`}>
@@ -41,48 +41,55 @@ export function DecisionPage() {
           )
         }
         aside={
-          <div className="space-y-4">
-            <MetricBlock
+          <div className="insight-stack">
+            <InsightTile
               label="Check binario"
-              value={caseItem.atribuibleSuministro ? "Si" : "No / vacio"}
+              value={caseItem.atribuibleSuministro ? "Atribuible" : "No atribuible / vacio"}
             />
-            <MetricBlock label="Aceptacion detectada" value={sentenceList(analysis.acceptanceMatches)} />
-            <MetricBlock label="Rechazo detectado" value={sentenceList(analysis.rejectionMatches)} />
+            <InsightTile
+              label="Aceptacion detectada"
+              value={sentenceList(analysis.acceptanceMatches)}
+            />
+            <InsightTile
+              label="Rechazo detectado"
+              value={sentenceList(analysis.rejectionMatches)}
+            />
           </div>
         }
       >
-        <div className="grid gap-6">
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-[28px] border border-slate-200 bg-mist p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted">
-                Paso A · Check binario
-              </p>
-              <p className="mt-3 text-2xl font-bold text-slate-950">
-                {caseItem.atribuibleSuministro
-                  ? "Atribuible al suministro"
-                  : "No atribuible por check binario"}
-              </p>
-              <p className="mt-3 text-sm leading-7 text-muted">
-                {caseItem.atribuibleSuministro
-                  ? "El informe habilita la revision semantica para confirmar el criterio del tecnico."
-                  : "El caso se cierra sin pasar por la regla financiera."}
-              </p>
-            </div>
-
-            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-soft">
-              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted">
-                Resultado de la matriz
-              </p>
-              <p className="mt-3 text-2xl font-bold text-slate-950">{analysis.decision}</p>
-              <p className="mt-3 text-sm leading-7 text-muted">{analysis.narrative}</p>
+        <div className="analysis-grid single-flow">
+          <div className="info-card">
+            <div className="signal-grid">
+              <DecisionSignal
+                copy={
+                  caseItem.atribuibleSuministro
+                    ? "El informe habilita revision semantica para validar el criterio del tecnico."
+                    : "El caso se puede cerrar sin pasar por regla financiera."
+                }
+                label="Check binario"
+                title={
+                  caseItem.atribuibleSuministro
+                    ? "Atribuible al suministro"
+                    : "No atribuible por check binario"
+                }
+              />
+              <DecisionSignal
+                copy={analysis.narrative}
+                label="Resultado de la matriz"
+                title={analysis.decision}
+              />
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-soft">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted">
-              Paso B · Analisis semantico
-            </p>
-            <div className="mt-5 grid gap-5 lg:grid-cols-2">
+          <div className="info-card">
+            <div className="section-heading compact">
+              <div>
+                <p className="section-kicker">Analisis semantico</p>
+                <h3 className="section-title">Evidencias que activan la decision</h3>
+              </div>
+            </div>
+
+            <div className="evidence-grid">
               <TextEvidenceCard
                 title="Descripcion de causa de falla"
                 text={caseItem.descripcionCausaFalla}
@@ -101,20 +108,30 @@ export function DecisionPage() {
   );
 }
 
-function MetricBlock({ label, value }) {
+function InsightTile({ label, value }) {
   return (
-    <div className="rounded-2xl bg-mist p-4">
-      <p className="text-xs uppercase tracking-[0.24em] text-muted">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-slate-950">{value}</p>
+    <div className="insight-tile">
+      <p className="field-label">{label}</p>
+      <p className="field-value">{value}</p>
+    </div>
+  );
+}
+
+function DecisionSignal({ label, title, copy }) {
+  return (
+    <div className="decision-signal">
+      <p className="field-label">{label}</p>
+      <h3 className="section-title small">{title}</h3>
+      <p className="section-copy">{copy}</p>
     </div>
   );
 }
 
 function TextEvidenceCard({ title, text, keywords }) {
   return (
-    <div className="rounded-[24px] border border-slate-200 bg-mist p-5">
-      <p className="text-sm font-semibold text-slate-950">{title}</p>
-      <p className="mt-4 text-sm leading-7 text-muted">
+    <div className="evidence-card">
+      <p className="check-title">{title}</p>
+      <p className="note-copy">
         <KeywordText keywords={keywords} text={text} />
       </p>
     </div>

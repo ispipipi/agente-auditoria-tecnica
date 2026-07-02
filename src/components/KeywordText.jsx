@@ -32,7 +32,7 @@ export function KeywordText({ text, keywords }) {
     segments.push(
       <mark
         key={`${start}-${end}-${index}`}
-        className="rounded-md bg-cyan-100 px-1 py-0.5 font-semibold text-accent"
+        className="keyword-highlight"
       >
         {text.slice(start, end)}
       </mark>,

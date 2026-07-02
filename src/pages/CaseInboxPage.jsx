@@ -1,137 +1,209 @@
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CaseStatusBadge } from "../components/CaseStatusBadge";
+import { WorkflowStateBadge } from "../components/WorkflowStateBadge";
 import { useDemo } from "../context/DemoContext";
+
+const playbookLabels = {
+  Aprobado: "Valida atribuibilidad y reparacion",
+  Rechazado: "Muestra rechazo tecnico sin regla 70%",
+  Incompleto: "Explica alertas por calidad documental",
+  Indemnizacion: "Cierra con regla financiera y payout",
+};
+
+const playbookOrder = ["Aprobado", "Rechazado", "Incompleto", "Indemnizacion"];
 
 export function CaseInboxPage() {
   const navigate = useNavigate();
-  const { cases, overrides } = useDemo();
+  const {
+    cases,
+    dashboardMetrics,
+    getCaseProgress,
+    getCaseRoute,
+    getCaseState,
+    getFinalDecision,
+    getRecommendedCase,
+    startCase,
+    workflow,
+  } = useDemo();
 
-  const reviewedCount = Object.keys(overrides).length;
-  const remainingCount = cases.length - reviewedCount;
+  const nextCase = getRecommendedCase();
+
+  function openCase(caseItem) {
+    const state = getCaseState(caseItem);
+    const route = state.status === "new" ? startCase(caseItem) : getCaseRoute(caseItem);
+    navigate(route);
+  }
 
   return (
     <AppShell>
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-        <div className="rounded-[32px] border border-white/80 bg-slate-950 px-6 py-7 text-white shadow-card">
-          <p className="text-xs font-semibold uppercase tracking-[0.34em] text-aqua/80">
-            Bandeja de casos
-          </p>
-          <h2 className="mt-4 max-w-2xl font-display text-4xl font-bold tracking-[-0.06em]">
-            Cuatro escenarios listos para contar una historia clara de decision automatizada con respaldo visual.
-          </h2>
-          <p className="mt-4 max-w-2xl text-sm leading-7 text-white/72">
-            La bandeja esta preparada para una demo guiada: muestra el caso, explica el hallazgo, recorre el wizard y cierra con una instruccion final entendible para sponsor y analistas.
+      <section className="dashboard-hero">
+        <div className="dashboard-hero-copy">
+          <span className="hero-pill">Demo interactiva estilo producto</span>
+          <h2>Una bandeja de auditoria tecnica que se siente operativa, clara y lista para vender.</h2>
+          <p>
+            La simulacion recorre extraccion documental, criterio tecnico, regla del 70%,
+            override humano y cierre del caso. Cada ticket mantiene su estado para que la demo
+            pueda continuar sin perder el hilo.
           </p>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-[24px] border border-white/10 bg-white/8 p-4">
-              <p className="text-xs uppercase tracking-[0.24em] text-white/55">Casos cargados</p>
-              <p className="mt-3 text-3xl font-bold">{cases.length}</p>
-            </div>
-            <div className="rounded-[24px] border border-white/10 bg-white/8 p-4">
-              <p className="text-xs uppercase tracking-[0.24em] text-white/55">Revisados</p>
-              <p className="mt-3 text-3xl font-bold">{reviewedCount}</p>
-            </div>
-            <div className="rounded-[24px] border border-white/10 bg-white/8 p-4">
-              <p className="text-xs uppercase tracking-[0.24em] text-white/55">Por revisar</p>
-              <p className="mt-3 text-3xl font-bold">{remainingCount}</p>
-            </div>
+          <div className="hero-actions">
+            <button className="primary-button" onClick={() => openCase(nextCase)} type="button">
+              {dashboardMetrics.pending === dashboardMetrics.total
+                ? "Iniciar demo guiada"
+                : "Continuar siguiente caso"}
+            </button>
+            <button className="secondary-button" onClick={() => navigate(getCaseRoute(nextCase))} type="button">
+              Abrir caso recomendado
+            </button>
           </div>
         </div>
 
-        <div className="rounded-[32px] border border-white/80 bg-white/88 p-6 shadow-soft">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent/70">
-            Reglas principales
-          </p>
-          <ul className="mt-5 space-y-4 text-sm leading-7 text-muted">
-            <li>Campos obligatorios vacios llevan el caso directo a resultado incompleto.</li>
-            <li>Palabras clave atribuyen o rechazan sin necesidad de backend u OCR real.</li>
-            <li>La regla del 70% recalcula en tiempo real con precio de mercado editable.</li>
-            <li>El analista puede aprobar o reemplazar la decision del agente con justificacion.</li>
-          </ul>
-
-          <div className="mt-6 rounded-[24px] border border-cyan-100 bg-cyan-50/70 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-accent/70">
-              Recorrido sugerido
-            </p>
-            <p className="mt-3 text-sm leading-7 text-slate-950">
-              Comienza por <span className="font-semibold">Aprobado</span>, sigue con{" "}
-              <span className="font-semibold">Rechazado</span>, muestra el salto automatico del{" "}
-              <span className="font-semibold">Incompleto</span> y cierra con{" "}
-              <span className="font-semibold">Indemnizacion</span> para evidenciar la regla financiera.
-            </p>
+        <div className="dashboard-hero-panel">
+          <p className="panel-kicker">Recorrido sugerido</p>
+          <div className="journey-list">
+            {cases
+              .slice()
+              .sort(
+                (left, right) =>
+                  playbookOrder.indexOf(left.escenario) - playbookOrder.indexOf(right.escenario),
+              )
+              .map((caseItem, index) => (
+                <div className="journey-item" key={caseItem.idTicket}>
+                  <span className="journey-index">0{index + 1}</span>
+                  <div>
+                    <p className="journey-title">{caseItem.escenario}</p>
+                    <p className="journey-copy">{playbookLabels[caseItem.escenario]}</p>
+                  </div>
+                </div>
+              ))}
           </div>
         </div>
       </section>
 
-      <section className="mt-6 grid gap-5 xl:grid-cols-2">
-        {cases.map((caseItem) => {
-          const override = overrides[caseItem.idTicket];
-          const timelineState = override?.decisionFinal ? "Caso revisado" : "Listo para abrir";
-          return (
-            <button
-              key={caseItem.idTicket}
-              className="group relative overflow-hidden rounded-[28px] border border-white/80 bg-white/92 p-6 text-left shadow-soft transition hover:-translate-y-1 hover:shadow-card"
-              onClick={() => navigate(`/caso/${caseItem.idTicket}/extraccion`)}
-              type="button"
-            >
-              <div className="case-card-rail pointer-events-none absolute inset-x-0 top-0 h-1 opacity-80" />
-              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent/65">
-                    Escenario {caseItem.escenario}
-                  </p>
-                  <h3 className="mt-3 font-display text-2xl font-bold tracking-[-0.05em] text-slate-950">
-                    Ticket {caseItem.idTicket}
-                  </h3>
-                  <p className="mt-2 text-sm text-muted">
-                    {caseItem.tipoArtefacto} {caseItem.marca} {caseItem.modelo}
-                  </p>
-                </div>
+      <section className="metrics-grid">
+        <MetricCard label="Casos pendientes" value={dashboardMetrics.pending} />
+        <MetricCard label="En revision" value={dashboardMetrics.inReview} />
+        <MetricCard label="Casos cerrados" value={dashboardMetrics.closed} />
+        <MetricCard label="Overrides aplicados" value={dashboardMetrics.overridesApplied} />
+      </section>
 
-                <CaseStatusBadge decision={override?.decisionFinal} />
-              </div>
+      <section className="queue-layout">
+        <div className="surface-card">
+          <div className="section-heading">
+            <div>
+              <p className="section-kicker">Bandeja operativa</p>
+              <h3 className="section-title">Casos listos para la simulacion completa</h3>
+            </div>
+            <p className="section-copy">
+              Cada fila muestra el estado del ticket, el progreso del flujo y el siguiente paso
+              recomendado para mantener la demo viva.
+            </p>
+          </div>
 
-              <div className="mt-5 flex flex-wrap gap-2">
-                <span className="rounded-full border border-slate-200 bg-mist px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-                  {timelineState}
-                </span>
-                <span className="rounded-full border border-slate-200 bg-mist px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-                  Paso inicial: extraccion
-                </span>
-                <span className="rounded-full border border-slate-200 bg-mist px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-                  {caseItem.evidenciaFotografica ? "Con evidencia" : "Sin evidencia"}
-                </span>
-              </div>
+          <div className="queue-list">
+            {cases.map((caseItem) => {
+              const state = workflow[caseItem.idTicket];
+              const progress = getCaseProgress(caseItem);
+              const finalDecision =
+                state.status === "closed" ? getFinalDecision(caseItem) : undefined;
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl bg-mist p-4">
-                  <p className="text-xs uppercase tracking-[0.24em] text-muted">Hallazgo clave</p>
-                  <p className="mt-2 text-sm font-semibold text-slate-950">
-                    {caseItem.descripcionCausaFalla}
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-mist p-4">
-                  <p className="text-xs uppercase tracking-[0.24em] text-muted">Cierre esperado</p>
-                  <p className="mt-2 text-sm font-semibold text-slate-950">
-                    {override?.intervencionHumana
-                      ? "Override aplicado por analista"
-                      : `Salida objetivo: ${caseItem.escenario}`}
-                  </p>
-                </div>
-              </div>
+              return (
+                <button
+                  className="queue-row"
+                  key={caseItem.idTicket}
+                  onClick={() => openCase(caseItem)}
+                  type="button"
+                >
+                  <div className="queue-row-main">
+                    <div className="queue-row-heading">
+                      <div>
+                        <p className="queue-ticket">Ticket {caseItem.idTicket}</p>
+                        <h4 className="queue-device">
+                          {caseItem.tipoArtefacto} {caseItem.marca} {caseItem.modelo}
+                        </h4>
+                        <p className="queue-copy">{caseItem.descripcionCausaFalla}</p>
+                      </div>
 
-              <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
-                <span className="text-sm font-semibold text-accent">
-                  Abrir flujo de analisis
-                </span>
-                <span className="text-xl text-accent transition group-hover:translate-x-1">→</span>
-              </div>
+                      <div className="queue-badges">
+                        <WorkflowStateBadge state={state.status} />
+                        <CaseStatusBadge
+                          decision={finalDecision}
+                          pendingLabel={caseItem.escenario}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="queue-meta">
+                      <span className="meta-chip">Escenario: {caseItem.escenario}</span>
+                      <span className="meta-chip">
+                        {state.status === "closed"
+                          ? "Cierre completado"
+                          : state.status === "in_review"
+                            ? "Flujo en curso"
+                            : "Sin iniciar"}
+                      </span>
+                      <span className="meta-chip">
+                        {caseItem.evidenciaFotografica ? "Con evidencia" : "Sin evidencia"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="queue-row-side">
+                    <div>
+                      <p className="queue-side-label">Progreso</p>
+                      <p className="queue-side-value">{progress}%</p>
+                    </div>
+                    <div className="progress-track">
+                      <span className="progress-fill" style={{ width: `${progress}%` }} />
+                    </div>
+                    <span className="queue-link">
+                      {state.status === "new"
+                        ? "Comenzar simulacion"
+                        : state.status === "closed"
+                          ? "Ver cierre del caso"
+                          : "Continuar flujo"}
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="sidebar-stack">
+          <div className="surface-card surface-card-accent">
+            <p className="panel-kicker">Caso recomendado ahora</p>
+            <h3 className="sidebar-title">Escenario {nextCase.escenario}</h3>
+            <p className="sidebar-copy">
+              {playbookLabels[nextCase.escenario]}. Ideal para mantener la narrativa comercial de
+              la demo.
+            </p>
+            <button className="primary-button w-full" onClick={() => openCase(nextCase)} type="button">
+              Abrir caso sugerido
             </button>
-          );
-        })}
+          </div>
+
+          <div className="surface-card">
+            <p className="panel-kicker">Valor para sponsor</p>
+            <ul className="value-list">
+              <li>Explica por que un caso se aprueba, rechaza o alerta.</li>
+              <li>Hace visible cuando entra la regla economica del 70%.</li>
+              <li>Permite override humano con trazabilidad antes del cierre.</li>
+              <li>Muestra el cierre del ticket y deja lista la siguiente iteracion.</li>
+            </ul>
+          </div>
+        </div>
       </section>
     </AppShell>
+  );
+}
+
+function MetricCard({ label, value }) {
+  return (
+    <div className="metric-card">
+      <p className="metric-label">{label}</p>
+      <p className="metric-value">{value}</p>
+    </div>
   );
 }

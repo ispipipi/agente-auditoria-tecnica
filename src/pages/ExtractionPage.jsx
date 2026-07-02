@@ -20,85 +20,74 @@ export function ExtractionPage() {
         caseItem={caseItem}
         currentStep={0}
         eyebrow="Paso 1"
-        title="Extraccion de datos y validacion documental"
+        title="Extraccion documental y control de integridad"
         actions={
           analysis.canAdvanceFromExtraction ? (
             <Link className="primary-button" to={`/caso/${caseItem.idTicket}/decision`}>
-              Continuar a decision
+              Continuar al criterio tecnico
             </Link>
           ) : (
             <Link className="primary-button" to={`/caso/${caseItem.idTicket}/resultado`}>
-              Ver resultado incompleto
+              Ir al cierre por alerta
             </Link>
           )
         }
         aside={
-          <div className="space-y-4">
-            <div className="rounded-2xl bg-mist p-4">
-              <p className="text-xs uppercase tracking-[0.24em] text-muted">Firma tecnica</p>
-              <p className="mt-2 text-lg font-semibold text-slate-950">
-                {caseItem.firmaTecnicoPresente ? "Validada" : "Ausente"}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-mist p-4">
-              <p className="text-xs uppercase tracking-[0.24em] text-muted">Evidencia</p>
-              <p className="mt-2 text-lg font-semibold text-slate-950">
-                {caseItem.evidenciaFotografica ? "Adjunta" : "No adjunta"}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-mist p-4">
-              <p className="text-xs uppercase tracking-[0.24em] text-muted">Campos faltantes</p>
-              <p className="mt-2 text-sm font-semibold text-slate-950">
-                {analysis.missingFields.length > 0
-                  ? analysis.missingFields.join(", ")
-                  : "Ninguno"}
-              </p>
-            </div>
+          <div className="insight-stack">
+            <InsightTile
+              label="Firma tecnica"
+              value={caseItem.firmaTecnicoPresente ? "Validada" : "Ausente"}
+            />
+            <InsightTile
+              label="Evidencia fotografica"
+              value={caseItem.evidenciaFotografica ? "Adjunta" : "No adjunta"}
+            />
+            <InsightTile
+              label="Campos faltantes"
+              value={analysis.missingFields.length > 0 ? analysis.missingFields.join(", ") : "Ninguno"}
+            />
           </div>
         }
       >
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(280px,0.85fr)]">
-          <div className="rounded-[28px] border border-slate-200 bg-mist p-5">
-            <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-soft">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-accent/65">
-                Documento simulado
-              </p>
-              <div className="mt-5 grid gap-4 md:grid-cols-2">
+        <div className="analysis-grid">
+          <div className="analysis-column">
+            <div className="info-card">
+              <div className="section-heading compact">
+                <div>
+                  <p className="section-kicker">Documento fuente</p>
+                  <h3 className="section-title">Extraccion estructurada del informe tecnico</h3>
+                </div>
+              </div>
+
+              <div className="field-grid">
                 {[
                   ["ID Ticket", caseItem.idTicket],
                   ["Tipo de artefacto", caseItem.tipoArtefacto],
                   ["Marca", caseItem.marca],
                   ["Modelo", caseItem.modelo],
                   ["Numero de serie", caseItem.numeroSerie || "No informado"],
-                  ["Componentes", caseItem.componentesDeteriorados],
+                  ["Componentes afectados", caseItem.componentesDeteriorados],
                 ].map(([label, value]) => (
-                  <div
-                    key={label}
-                    className="rounded-2xl border border-cyan-100 bg-cyan-50/70 p-4"
-                  >
-                    <p className="text-xs uppercase tracking-[0.2em] text-accent/65">{label}</p>
-                    <p className="mt-2 text-sm font-semibold text-slate-950">{value}</p>
+                  <div className="field-card" key={label}>
+                    <p className="field-label">{label}</p>
+                    <p className="field-value">{value}</p>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-5 rounded-2xl bg-slate-950 p-5 text-white">
-                <p className="text-xs uppercase tracking-[0.22em] text-white/55">
-                  Comentarios del tecnico
-                </p>
-                <p className="mt-3 text-sm leading-7 text-white/82">
+              <div className="note-panel">
+                <p className="field-label">Comentarios del tecnico</p>
+                <p className="note-copy">
                   {caseItem.comentariosObservaciones || "Sin observaciones registradas."}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="space-y-5">
-            <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-soft">
-              <p className="text-xs font-semibold uppercase tracking-[0.26em] text-muted">
-                Validaciones
-              </p>
-              <div className="mt-4 space-y-3">
+          <div className="analysis-column">
+            <div className="info-card">
+              <p className="section-kicker">Checklist de calidad</p>
+              <div className="checklist-stack">
                 <ValidationRow
                   label="Autoria tecnica"
                   value={caseItem.firmaTecnicoPresente}
@@ -115,31 +104,29 @@ export function ExtractionPage() {
             </div>
 
             {caseItem.evidenciaFotografica ? (
-              <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-soft">
-                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-muted">
-                  Thumbnail de evidencia
-                </p>
+              <div className="info-card">
+                <p className="section-kicker">Vista previa de evidencia</p>
                 <img
                   alt="Evidencia fotografica generica"
-                  className="mt-4 w-full rounded-[24px] border border-slate-200 bg-mist object-cover"
+                  className="evidence-image"
                   src={`${import.meta.env.BASE_URL}evidence-placeholder.svg`}
                 />
               </div>
             ) : null}
 
-            {analysis.missingFields.length > 0 ? (
-              <div className="rounded-[28px] border border-slate-200 bg-slate-100 p-5 shadow-soft">
-                <p className="text-xs font-semibold uppercase tracking-[0.26em] text-muted">
-                  Alerta de integridad
-                </p>
-                <p className="mt-3 text-lg font-semibold text-slate-950">
-                  Caso Incompleto - Alertar
-                </p>
-                <p className="mt-3 text-sm leading-7 text-muted">
-                  Faltan estos campos obligatorios: {analysis.missingFields.join(", ")}.
-                </p>
-              </div>
-            ) : null}
+            <div className={`info-card ${analysis.missingFields.length > 0 ? "info-card-alert" : ""}`}>
+              <p className="section-kicker">Estado de integridad</p>
+              <h3 className="section-title">
+                {analysis.missingFields.length > 0
+                  ? "Caso incompleto: requiere alerta"
+                  : "Documento apto para analisis automatico"}
+              </h3>
+              <p className="section-copy">
+                {analysis.missingFields.length > 0
+                  ? `Faltan estos campos obligatorios: ${analysis.missingFields.join(", ")}.`
+                  : "La informacion minima requerida esta presente para continuar con criterio tecnico y decision."}
+              </p>
+            </div>
           </div>
         </div>
       </WizardFrame>
@@ -147,19 +134,24 @@ export function ExtractionPage() {
   );
 }
 
+function InsightTile({ label, value }) {
+  return (
+    <div className="insight-tile">
+      <p className="field-label">{label}</p>
+      <p className="field-value">{value}</p>
+    </div>
+  );
+}
+
 function ValidationRow({ label, value, okText, badText }) {
   return (
-    <div className="flex items-center justify-between rounded-2xl bg-mist px-4 py-3">
+    <div className="check-row">
       <div>
-        <p className="text-sm font-semibold text-slate-950">{label}</p>
-        <p className="text-xs text-muted">{value ? okText : badText}</p>
+        <p className="check-title">{label}</p>
+        <p className="check-copy">{value ? okText : badText}</p>
       </div>
-      <span
-        className={`flex h-10 w-10 items-center justify-center rounded-2xl text-lg font-bold ${
-          value ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
-        }`}
-      >
-        {value ? "✓" : "✕"}
+      <span className={`check-icon ${value ? "check-icon-ok" : "check-icon-bad"}`}>
+        {value ? "✓" : "!"}
       </span>
     </div>
   );
