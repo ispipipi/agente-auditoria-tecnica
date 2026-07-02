@@ -26,8 +26,8 @@ export default {
           "radial-gradient(circle at top left, rgba(19,114,142,0.18), transparent 28%), radial-gradient(circle at 82% 18%, rgba(141,216,232,0.24), transparent 22%), linear-gradient(180deg, rgba(255,255,255,0.92), rgba(240,246,249,0.98))",
       },
       fontFamily: {
-        sans: ["Manrope", "ui-sans-serif", "system-ui", "sans-serif"],
-        display: ["Space Grotesk", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["Avenir Next", "Segoe UI", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["Trebuchet MS", "Avenir Next Condensed", "Segoe UI", "sans-serif"],
       },
     },
   },
