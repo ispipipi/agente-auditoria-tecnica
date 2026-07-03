@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CaseStatusBadge } from "../components/CaseStatusBadge";
@@ -13,10 +14,37 @@ const playbookLabels = {
 
 const playbookOrder = ["Aprobado", "Rechazado", "Incompleto", "Indemnizacion"];
 
+function buildManualFormState(manualCase) {
+  return {
+    nCliente: manualCase?.nCliente ?? "12000001",
+    tipoArtefacto: manualCase?.tipoArtefacto ?? "LAVADORA",
+    marca: manualCase?.marca ?? "MIDEA",
+    modelo: manualCase?.modelo ?? "MANUAL DEMO 2026",
+    numeroSerie: manualCase?.numeroSerie ?? "",
+    componentesDeteriorados: manualCase?.componentesDeteriorados ?? "Panel de control",
+    descripcionCausaFalla: manualCase?.descripcionCausaFalla ?? "",
+    comentariosObservaciones: manualCase?.comentariosObservaciones ?? "",
+    atribuibleSuministro:
+      manualCase?.atribuibleSuministro === null || manualCase?.atribuibleSuministro === undefined
+        ? "null"
+        : String(manualCase.atribuibleSuministro),
+    firmaTecnicoPresente: manualCase?.firmaTecnicoPresente ?? false,
+    evidenciaFotografica: manualCase?.evidenciaFotografica ?? false,
+    presupuestoReparacion:
+      manualCase?.presupuestoReparacion === null || manualCase?.presupuestoReparacion === undefined
+        ? ""
+        : String(manualCase.presupuestoReparacion),
+    razonSocialServicio:
+      manualCase?.razonSocialServicio ?? "Servicio ingresado manualmente",
+    tecnicoResponsable: manualCase?.tecnicoResponsable ?? "Analista Demo",
+  };
+}
+
 export function CaseInboxPage() {
   const navigate = useNavigate();
   const {
     cases,
+    createManualCase,
     dashboardMetrics,
     getCaseProgress,
     getCaseRoute,
@@ -28,6 +56,21 @@ export function CaseInboxPage() {
   } = useDemo();
 
   const nextCase = getRecommendedCase();
+  const manualCase = dashboardMetrics.manualCase;
+  const [showManualForm, setShowManualForm] = useState(!manualCase);
+  const [manualForm, setManualForm] = useState(() => buildManualFormState(manualCase));
+
+  const journeyCases = useMemo(
+    () =>
+      cases
+        .filter((item) => item.caseOrigin === "demo")
+        .slice()
+        .sort(
+          (left, right) =>
+            playbookOrder.indexOf(left.escenario) - playbookOrder.indexOf(right.escenario),
+        ),
+    [cases],
+  );
 
   function openCase(caseItem) {
     const state = getCaseState(caseItem);
@@ -35,16 +78,37 @@ export function CaseInboxPage() {
     navigate(route);
   }
 
+  function handleManualChange(field, value) {
+    setManualForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  function handleManualSubmit(event) {
+    event.preventDefault();
+
+    const createdCase = createManualCase({
+      ...manualForm,
+      presupuestoReparacion: manualForm.presupuestoReparacion,
+      atribuibleSuministro: manualForm.atribuibleSuministro,
+      escenario: "Manual",
+    });
+
+    setShowManualForm(false);
+    navigate(startCase(createdCase));
+  }
+
   return (
     <AppShell>
       <section className="dashboard-hero">
         <div className="dashboard-hero-copy">
           <span className="hero-pill">Demo interactiva estilo producto</span>
-          <h2>Una bandeja de auditoria tecnica que se siente operativa, clara y lista para vender.</h2>
+          <h2>Ejemplos listos para mostrar la narrativa y un caso manual para probar funcionalidades.</h2>
           <p>
-            La simulacion recorre extraccion documental, criterio tecnico, regla del 70%,
-            override humano y cierre del caso. Cada ticket mantiene su estado para que la demo
-            pueda continuar sin perder el hilo.
+            Mantienes los cuatro escenarios precargados para una demo guiada, pero tambien puedes
+            ingresar un caso manual con los campos minimos necesarios para activar criterio
+            tecnico, regla financiera, override y cierre.
           </p>
 
           <div className="hero-actions">
@@ -53,8 +117,12 @@ export function CaseInboxPage() {
                 ? "Iniciar demo guiada"
                 : "Continuar siguiente caso"}
             </button>
-            <button className="secondary-button" onClick={() => navigate(getCaseRoute(nextCase))} type="button">
-              Abrir caso recomendado
+            <button
+              className="secondary-button"
+              onClick={() => setShowManualForm((current) => !current)}
+              type="button"
+            >
+              {manualCase ? "Editar caso manual" : "Crear caso manual"}
             </button>
           </div>
         </div>
@@ -62,21 +130,24 @@ export function CaseInboxPage() {
         <div className="dashboard-hero-panel">
           <p className="panel-kicker">Recorrido sugerido</p>
           <div className="journey-list">
-            {cases
-              .slice()
-              .sort(
-                (left, right) =>
-                  playbookOrder.indexOf(left.escenario) - playbookOrder.indexOf(right.escenario),
-              )
-              .map((caseItem, index) => (
-                <div className="journey-item" key={caseItem.idTicket}>
-                  <span className="journey-index">0{index + 1}</span>
-                  <div>
-                    <p className="journey-title">{caseItem.escenario}</p>
-                    <p className="journey-copy">{playbookLabels[caseItem.escenario]}</p>
-                  </div>
+            {journeyCases.map((caseItem, index) => (
+              <div className="journey-item" key={caseItem.idTicket}>
+                <span className="journey-index">0{index + 1}</span>
+                <div>
+                  <p className="journey-title">{caseItem.escenario}</p>
+                  <p className="journey-copy">{playbookLabels[caseItem.escenario]}</p>
                 </div>
-              ))}
+              </div>
+            ))}
+            <div className="journey-item">
+              <span className="journey-index">05</span>
+              <div>
+                <p className="journey-title">Manual</p>
+                <p className="journey-copy">
+                  Permite ingresar informacion propia y tensionar el flujo en vivo.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -85,7 +156,7 @@ export function CaseInboxPage() {
         <MetricCard label="Casos pendientes" value={dashboardMetrics.pending} />
         <MetricCard label="En revision" value={dashboardMetrics.inReview} />
         <MetricCard label="Casos cerrados" value={dashboardMetrics.closed} />
-        <MetricCard label="Overrides aplicados" value={dashboardMetrics.overridesApplied} />
+        <MetricCard label="Casos manuales" value={dashboardMetrics.hasManualCase ? 1 : 0} />
       </section>
 
       <section className="queue-layout">
@@ -93,11 +164,11 @@ export function CaseInboxPage() {
           <div className="section-heading">
             <div>
               <p className="section-kicker">Bandeja operativa</p>
-              <h3 className="section-title">Casos listos para la simulacion completa</h3>
+              <h3 className="section-title">Ejemplos cargados y caso manual editable</h3>
             </div>
             <p className="section-copy">
-              Cada fila muestra el estado del ticket, el progreso del flujo y el siguiente paso
-              recomendado para mantener la demo viva.
+              Los ejemplos sostienen el relato comercial. El caso manual te deja ingresar datos
+              propios para demostrar la funcionalidad sin depender solo de mocks.
             </p>
           </div>
 
@@ -122,7 +193,7 @@ export function CaseInboxPage() {
                         <h4 className="queue-device">
                           {caseItem.tipoArtefacto} {caseItem.marca} {caseItem.modelo}
                         </h4>
-                        <p className="queue-copy">{caseItem.descripcionCausaFalla}</p>
+                        <p className="queue-copy">{caseItem.descripcionCausaFalla || "Caso listo para completar en vivo."}</p>
                       </div>
 
                       <div className="queue-badges">
@@ -135,7 +206,9 @@ export function CaseInboxPage() {
                     </div>
 
                     <div className="queue-meta">
-                      <span className="meta-chip">Escenario: {caseItem.escenario}</span>
+                      <span className="meta-chip">
+                        Origen: {caseItem.caseOrigin === "manual" ? "Ingreso manual" : "Ejemplo cargado"}
+                      </span>
                       <span className="meta-chip">
                         {state.status === "closed"
                           ? "Cierre completado"
@@ -174,10 +247,13 @@ export function CaseInboxPage() {
         <div className="sidebar-stack">
           <div className="surface-card surface-card-accent">
             <p className="panel-kicker">Caso recomendado ahora</p>
-            <h3 className="sidebar-title">Escenario {nextCase.escenario}</h3>
+            <h3 className="sidebar-title">
+              {nextCase.caseOrigin === "manual" ? "Caso manual" : `Escenario ${nextCase.escenario}`}
+            </h3>
             <p className="sidebar-copy">
-              {playbookLabels[nextCase.escenario]}. Ideal para mantener la narrativa comercial de
-              la demo.
+              {nextCase.caseOrigin === "manual"
+                ? "Usa este ticket para demostrar ingreso de informacion y recalculo en vivo."
+                : `${playbookLabels[nextCase.escenario]}. Ideal para mantener la narrativa comercial de la demo.`}
             </p>
             <button className="primary-button w-full" onClick={() => openCase(nextCase)} type="button">
               Abrir caso sugerido
@@ -185,13 +261,148 @@ export function CaseInboxPage() {
           </div>
 
           <div className="surface-card">
-            <p className="panel-kicker">Valor para sponsor</p>
-            <ul className="value-list">
-              <li>Explica por que un caso se aprueba, rechaza o alerta.</li>
-              <li>Hace visible cuando entra la regla economica del 70%.</li>
-              <li>Permite override humano con trazabilidad antes del cierre.</li>
-              <li>Muestra el cierre del ticket y deja lista la siguiente iteracion.</li>
-            </ul>
+            <div className="section-heading compact">
+              <div>
+                <p className="panel-kicker">Caso manual</p>
+                <h3 className="section-title small">
+                  {manualCase ? "Editar datos para la simulacion" : "Crear un ticket en vivo"}
+                </h3>
+              </div>
+            </div>
+
+            <p className="sidebar-copy">
+              Completa solo la informacion necesaria para disparar extraccion, criterio tecnico y
+              regla financiera. Luego puedes seguir ajustando desde el flujo.
+            </p>
+
+            {showManualForm ? (
+              <form className="manual-case-form" onSubmit={handleManualSubmit}>
+                <label className="block">
+                  <span className="form-label">Cliente</span>
+                  <input
+                    className="form-input mt-2"
+                    onChange={(event) => handleManualChange("nCliente", event.target.value)}
+                    value={manualForm.nCliente}
+                  />
+                </label>
+
+                <div className="manual-form-grid">
+                  <label className="block">
+                    <span className="form-label">Artefacto</span>
+                    <input
+                      className="form-input mt-2"
+                      onChange={(event) => handleManualChange("tipoArtefacto", event.target.value)}
+                      value={manualForm.tipoArtefacto}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="form-label">Marca</span>
+                    <input
+                      className="form-input mt-2"
+                      onChange={(event) => handleManualChange("marca", event.target.value)}
+                      value={manualForm.marca}
+                    />
+                  </label>
+                </div>
+
+                <div className="manual-form-grid">
+                  <label className="block">
+                    <span className="form-label">Modelo</span>
+                    <input
+                      className="form-input mt-2"
+                      onChange={(event) => handleManualChange("modelo", event.target.value)}
+                      value={manualForm.modelo}
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="form-label">Presupuesto reparacion</span>
+                    <input
+                      className="form-input mt-2"
+                      min="0"
+                      onChange={(event) =>
+                        handleManualChange("presupuestoReparacion", event.target.value)
+                      }
+                      type="number"
+                      value={manualForm.presupuestoReparacion}
+                    />
+                  </label>
+                </div>
+
+                <label className="block">
+                  <span className="form-label">Causa de falla</span>
+                  <textarea
+                    className="form-input mt-2 min-h-28"
+                    onChange={(event) => handleManualChange("descripcionCausaFalla", event.target.value)}
+                    value={manualForm.descripcionCausaFalla}
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="form-label">Comentarios del tecnico</span>
+                  <textarea
+                    className="form-input mt-2 min-h-28"
+                    onChange={(event) => handleManualChange("comentariosObservaciones", event.target.value)}
+                    value={manualForm.comentariosObservaciones}
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="form-label">Atribuible a suministro</span>
+                  <select
+                    className="form-input mt-2"
+                    onChange={(event) => handleManualChange("atribuibleSuministro", event.target.value)}
+                    value={manualForm.atribuibleSuministro}
+                  >
+                    <option value="null">Sin definir</option>
+                    <option value="true">Si</option>
+                    <option value="false">No</option>
+                  </select>
+                </label>
+
+                <div className="manual-check-grid">
+                  <label className="check-toggle">
+                    <input
+                      checked={manualForm.firmaTecnicoPresente}
+                      onChange={(event) =>
+                        handleManualChange("firmaTecnicoPresente", event.target.checked)
+                      }
+                      type="checkbox"
+                    />
+                    <span>Firma tecnica presente</span>
+                  </label>
+                  <label className="check-toggle">
+                    <input
+                      checked={manualForm.evidenciaFotografica}
+                      onChange={(event) =>
+                        handleManualChange("evidenciaFotografica", event.target.checked)
+                      }
+                      type="checkbox"
+                    />
+                    <span>Evidencia fotografica</span>
+                  </label>
+                </div>
+
+                <button className="primary-button w-full" type="submit">
+                  {manualCase ? "Guardar y abrir caso manual" : "Crear y abrir caso manual"}
+                </button>
+              </form>
+            ) : (
+              <div className="manual-case-compact">
+                <p className="note-copy">
+                  Ticket manual disponible para editar y recorrer en vivo.
+                </p>
+                <button
+                  className="secondary-button w-full"
+                  onClick={() => {
+                    setManualForm(buildManualFormState(manualCase));
+                    setShowManualForm(true);
+                  }}
+                  type="button"
+                >
+                  Editar datos del caso manual
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>

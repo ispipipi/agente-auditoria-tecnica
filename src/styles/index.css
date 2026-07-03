@@ -345,7 +345,9 @@ img {
 .queue-list,
 .checklist-stack,
 .override-form,
-.action-stack {
+.action-stack,
+.manual-case-form,
+.manual-edit-grid {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
@@ -621,7 +623,9 @@ img {
 .signal-grid,
 .evidence-grid,
 .summary-grid,
-.finance-grid {
+.finance-grid,
+.manual-form-grid,
+.manual-check-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -885,6 +889,40 @@ img {
   color: var(--accent-strong);
 }
 
+.manual-case-compact {
+  margin-top: 1rem;
+}
+
+.manual-form-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.manual-check-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.check-switch,
+.check-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: 1rem;
+  background: var(--bg-soft);
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.check-switch input,
+.check-toggle input {
+  width: 1rem;
+  height: 1rem;
+}
+
 .value-list {
   padding-left: 1rem;
 }
@@ -989,6 +1027,8 @@ img {
   .evidence-grid,
   .summary-grid,
   .finance-grid,
+  .manual-form-grid,
+  .manual-check-grid,
   .stepper-grid {
     grid-template-columns: 1fr;
   }

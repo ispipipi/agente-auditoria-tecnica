@@ -5,9 +5,21 @@ import { DECISION_LABELS, evaluateCase, findMarketPrice, getPriceKey } from "../
 
 const DemoContext = createContext(null);
 
-const STORAGE_KEY = "agente-auditoria-tecnica-demo-v2";
+const STORAGE_KEY = "agente-auditoria-tecnica-demo-v3";
 const STEP_SEQUENCE = ["extraccion", "decision", "financiero", "resultado"];
 const DEMO_PLAYBOOK = ["Aprobado", "Rechazado", "Incompleto", "Indemnizacion"];
+const MANUAL_CASE_ID = "MANUAL-001";
+
+function enrichCase(caseItem, caseOrigin = "demo") {
+  return {
+    ...caseItem,
+    caseOrigin,
+  };
+}
+
+function buildBaseCases() {
+  return casosMock.map((item) => enrichCase(item, "demo"));
+}
 
 function buildInitialPrices() {
   return preciosMercadoMock.reduce((accumulator, item) => {
@@ -16,8 +28,8 @@ function buildInitialPrices() {
   }, {});
 }
 
-function buildInitialWorkflow() {
-  return casosMock.reduce((accumulator, item) => {
+function buildInitialWorkflow(casesList) {
+  return casesList.reduce((accumulator, item) => {
     accumulator[item.idTicket] = {
       status: "new",
       currentStep: STEP_SEQUENCE[0],
@@ -27,6 +39,37 @@ function buildInitialWorkflow() {
     };
     return accumulator;
   }, {});
+}
+
+function buildManualCasePayload(overrides = {}) {
+  return enrichCase(
+    {
+      idTicket: MANUAL_CASE_ID,
+      nCliente: "12000001",
+      fechaVisita: new Date().toISOString().slice(0, 10),
+      tipoArtefacto: "LAVADORA",
+      marca: "MIDEA",
+      modelo: "MANUAL DEMO 2026",
+      numeroSerie: "",
+      componentesDeteriorados: "Panel de control",
+      descripcionCausaFalla: "",
+      atribuibleSuministro: null,
+      componenteReparable: true,
+      componenteFueReparado: false,
+      comentariosObservaciones: "",
+      firmaTecnicoPresente: false,
+      evidenciaFotografica: false,
+      presupuestoReparacion: null,
+      estadoCaso: "completo",
+      escenario: "Manual",
+      razonSocialServicio: "Servicio ingresado manualmente",
+      tecnicoResponsable: "Analista Demo",
+      telefonoServicio: "",
+      correoServicio: "",
+      ...overrides,
+    },
+    "manual",
+  );
 }
 
 function readStoredState() {
@@ -40,8 +83,18 @@ function readStoredState() {
   }
 }
 
-function buildStoredWorkflow(storedWorkflow) {
-  const baseWorkflow = buildInitialWorkflow();
+function buildInitialCases(storedManualCase) {
+  const baseCases = buildBaseCases();
+
+  if (!storedManualCase) {
+    return baseCases;
+  }
+
+  return [...baseCases, enrichCase(storedManualCase, "manual")];
+}
+
+function buildStoredWorkflow(storedWorkflow, casesList) {
+  const baseWorkflow = buildInitialWorkflow(casesList);
 
   return Object.keys(baseWorkflow).reduce((accumulator, idTicket) => {
     accumulator[idTicket] = {
@@ -54,11 +107,13 @@ function buildStoredWorkflow(storedWorkflow) {
 
 function buildInitialSession() {
   const stored = readStoredState();
+  const casesList = buildInitialCases(stored?.manualCase ?? null);
 
   return {
+    cases: casesList,
     priceMap: stored?.priceMap ?? buildInitialPrices(),
     overrides: stored?.overrides ?? {},
-    workflow: buildStoredWorkflow(stored?.workflow),
+    workflow: buildStoredWorkflow(stored?.workflow, casesList),
   };
 }
 
@@ -70,11 +125,25 @@ function getStepIndex(stepKey) {
   return STEP_SEQUENCE.indexOf(stepKey);
 }
 
+function normalizeNullableBoolean(value) {
+  if (value === true || value === false || value === null) return value;
+  if (value === "true") return true;
+  if (value === "false") return false;
+  if (value === "null" || value === "") return null;
+  return value;
+}
+
+function normalizeNullableNumber(value) {
+  if (value === null || value === undefined || value === "") return null;
+  return Number(value);
+}
+
 export function DemoProvider({ children }) {
-  const [cases] = useState(casosMock);
-  const [priceMap, setPriceMap] = useState(() => buildInitialSession().priceMap);
-  const [overrides, setOverrides] = useState(() => buildInitialSession().overrides);
-  const [workflow, setWorkflow] = useState(() => buildInitialSession().workflow);
+  const session = useMemo(() => buildInitialSession(), []);
+  const [cases, setCases] = useState(session.cases);
+  const [priceMap, setPriceMap] = useState(session.priceMap);
+  const [overrides, setOverrides] = useState(session.overrides);
+  const [workflow, setWorkflow] = useState(session.workflow);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -82,12 +151,13 @@ export function DemoProvider({ children }) {
     window.localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
+        manualCase: cases.find((item) => item.caseOrigin === "manual") ?? null,
         priceMap,
         overrides,
         workflow,
       }),
     );
-  }, [overrides, priceMap, workflow]);
+  }, [cases, overrides, priceMap, workflow]);
 
   const getCaseById = useCallback((idTicket) => {
     return cases.find((item) => item.idTicket === idTicket) ?? null;
@@ -190,7 +260,10 @@ export function DemoProvider({ children }) {
 
   const getCaseRoute = useCallback((caseItem) => {
     const state = getCaseState(caseItem);
-    return getCaseLink(caseItem.idTicket, state.status === "closed" ? "resultado" : state.currentStep);
+    return getCaseLink(
+      caseItem.idTicket,
+      state.status === "closed" ? "resultado" : state.currentStep,
+    );
   }, [getCaseState]);
 
   const getCaseProgress = useCallback((caseItem) => {
@@ -206,6 +279,63 @@ export function DemoProvider({ children }) {
 
     return Math.round(((state.lastVisitedStep + 1) / STEP_SEQUENCE.length) * 100);
   }, [getCaseState]);
+
+  const updateCase = useCallback((idTicket, patch) => {
+    setCases((current) =>
+      current.map((item) => {
+        if (item.idTicket !== idTicket) return item;
+
+        const nextPatch = typeof patch === "function" ? patch(item) : patch;
+        const nextCase = {
+          ...item,
+          ...nextPatch,
+        };
+
+        return {
+          ...nextCase,
+          presupuestoReparacion: normalizeNullableNumber(nextCase.presupuestoReparacion),
+          atribuibleSuministro: normalizeNullableBoolean(nextCase.atribuibleSuministro),
+          componenteReparable: normalizeNullableBoolean(nextCase.componenteReparable),
+          componenteFueReparado: normalizeNullableBoolean(nextCase.componenteFueReparado),
+          firmaTecnicoPresente: Boolean(nextCase.firmaTecnicoPresente),
+          evidenciaFotografica: Boolean(nextCase.evidenciaFotografica),
+        };
+      }),
+    );
+  }, []);
+
+  const createManualCase = useCallback((payload = {}) => {
+    const manualCase = buildManualCasePayload({
+      ...payload,
+      presupuestoReparacion: normalizeNullableNumber(payload.presupuestoReparacion),
+      atribuibleSuministro: normalizeNullableBoolean(payload.atribuibleSuministro),
+      componenteReparable: normalizeNullableBoolean(payload.componenteReparable ?? true),
+      componenteFueReparado: normalizeNullableBoolean(payload.componenteFueReparado ?? false),
+      firmaTecnicoPresente: Boolean(payload.firmaTecnicoPresente),
+      evidenciaFotografica: Boolean(payload.evidenciaFotografica),
+    });
+
+    setCases((current) => {
+      const withoutManual = current.filter((item) => item.caseOrigin !== "manual");
+      return [...withoutManual, manualCase];
+    });
+
+    setOverrides((current) => {
+      const next = { ...current };
+      delete next[MANUAL_CASE_ID];
+      return next;
+    });
+
+    setCaseWorkflow(MANUAL_CASE_ID, {
+      status: "new",
+      currentStep: STEP_SEQUENCE[0],
+      lastVisitedStep: -1,
+      startedAt: null,
+      completedAt: null,
+    });
+
+    return manualCase;
+  }, [setCaseWorkflow]);
 
   const confirmAgentDecision = useCallback((caseItem) => {
     const analysis = getAgentAnalysis(caseItem);
@@ -256,14 +386,36 @@ export function DemoProvider({ children }) {
   }, [getAgentAnalysis, setCaseWorkflow]);
 
   const resetDemo = useCallback(() => {
+    const baseCases = buildBaseCases();
+    setCases(baseCases);
     setPriceMap(buildInitialPrices());
     setOverrides({});
-    setWorkflow(buildInitialWorkflow());
+    setWorkflow(buildInitialWorkflow(baseCases));
   }, []);
 
   const getRecommendedCase = useCallback((excludeIdTicket = null) => {
+    const inReviewCase = cases.find((item) => {
+      const state = getCaseState(item);
+      return (
+        state.status === "in_review" &&
+        state.status !== "closed" &&
+        item.idTicket !== excludeIdTicket
+      );
+    });
+
+    if (inReviewCase) {
+      return inReviewCase;
+    }
+
     const orderedCases = [...cases].sort((left, right) => {
-      return DEMO_PLAYBOOK.indexOf(left.escenario) - DEMO_PLAYBOOK.indexOf(right.escenario);
+      if (left.caseOrigin !== right.caseOrigin) {
+        return left.caseOrigin === "demo" ? -1 : 1;
+      }
+
+      const leftIndex = DEMO_PLAYBOOK.indexOf(left.escenario);
+      const rightIndex = DEMO_PLAYBOOK.indexOf(right.escenario);
+
+      return (leftIndex === -1 ? 999 : leftIndex) - (rightIndex === -1 ? 999 : rightIndex);
     });
 
     return (
@@ -282,6 +434,7 @@ export function DemoProvider({ children }) {
     const overridesApplied = Object.values(overrides).filter(
       (item) => item.intervencionHumana,
     ).length;
+    const manualCase = cases.find((item) => item.caseOrigin === "manual") ?? null;
 
     return {
       total: cases.length,
@@ -290,8 +443,10 @@ export function DemoProvider({ children }) {
       pending,
       overridesApplied,
       completedAll: closed === cases.length,
+      hasManualCase: Boolean(manualCase),
+      manualCase,
     };
-  }, [cases, overrides, workflow]);
+  }, [cases, overrides, getCaseState]);
 
   return (
     <DemoContext.Provider
@@ -309,9 +464,11 @@ export function DemoProvider({ children }) {
         getAgentAnalysis,
         getFinalDecision,
         getRecommendedCase,
+        updateCase,
         updateMarketPrice,
         visitStep,
         startCase,
+        createManualCase,
         confirmAgentDecision,
         saveOverride,
         resetDemo,
