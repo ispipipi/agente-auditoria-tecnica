@@ -23,6 +23,7 @@ export function WizardFrame({
 }) {
   const { getCaseState, getFinalDecision, visitStep } = useDemo();
   const caseState = getCaseState(caseItem);
+  const completionValue = Math.round(((currentStep + 1) / steps.length) * 100);
 
   useEffect(() => {
     visitStep(caseItem, steps[currentStep].path);
@@ -33,7 +34,7 @@ export function WizardFrame({
       <section className="wizard-main">
         <div className="surface-card surface-card-hero">
           <div className="surface-eyebrow-row">
-            <div>
+            <div className="surface-copy-block">
               <p className="surface-eyebrow">{eyebrow}</p>
               <h2 className="surface-title">{title}</h2>
               <p className="surface-copy">
@@ -54,6 +55,17 @@ export function WizardFrame({
             </div>
           </div>
 
+          <div className="wizard-progress-panel">
+            <p className="field-label">Avance del recorrido</p>
+            <div className="wizard-progress-heading">
+              <strong>{completionValue}%</strong>
+              <span>{currentStep + 1} de 4 etapas</span>
+            </div>
+            <div className="progress-track wizard-progress-track">
+              <span className="progress-fill" style={{ width: `${completionValue}%` }} />
+            </div>
+          </div>
+
           <div className="stepper-grid">
             {steps.map((step, index) => {
               const isActive = currentStep === index;
@@ -66,8 +78,11 @@ export function WizardFrame({
                     isComplete ? "step-card-complete" : ""
                   }`}
                 >
-                  <p className="step-label">Paso {index + 1}</p>
-                  <p className="step-title">{step.title}</p>
+                  <div className="step-index">{isComplete ? "OK" : `0${index + 1}`}</div>
+                  <div>
+                    <p className="step-label">Paso {index + 1}</p>
+                    <p className="step-title">{step.title}</p>
+                  </div>
                 </div>
               );
             })}

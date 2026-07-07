@@ -103,12 +103,12 @@ export function CaseInboxPage() {
     <AppShell>
       <section className="dashboard-hero">
         <div className="dashboard-hero-copy">
-          <span className="hero-pill">Demo interactiva estilo producto</span>
-          <h2>Ejemplos listos para mostrar la narrativa y un caso manual para probar funcionalidades.</h2>
+          <span className="hero-pill">Centro de operaciones para la demo</span>
+          <h2>Una simulacion completa, navegable y creible para vender el agente de auditoria tecnica.</h2>
           <p>
-            Mantienes los cuatro escenarios precargados para una demo guiada, pero tambien puedes
-            ingresar un caso manual con los campos minimos necesarios para activar criterio
-            tecnico, regla financiera, override y cierre.
+            La bandeja mezcla storytelling comercial y operacion real: cuatro escenarios
+            precargados para conducir la narrativa y un ticket manual para demostrar ingreso,
+            recalculo, override y cierre en vivo sin depender solo de mocks.
           </p>
 
           <div className="hero-actions">
@@ -125,9 +125,45 @@ export function CaseInboxPage() {
               {manualCase ? "Editar caso manual" : "Crear caso manual"}
             </button>
           </div>
+
+          <div className="hero-stat-strip">
+            <div className="hero-stat-card">
+              <span className="hero-stat-label">Recorridos</span>
+              <strong className="hero-stat-value">5</strong>
+              <span className="hero-stat-copy">4 ejemplos + 1 ticket editable</span>
+            </div>
+            <div className="hero-stat-card">
+              <span className="hero-stat-label">Motor</span>
+              <strong className="hero-stat-value">70%</strong>
+              <span className="hero-stat-copy">Regla financiera ajustable</span>
+            </div>
+            <div className="hero-stat-card">
+              <span className="hero-stat-label">Salida</span>
+              <strong className="hero-stat-value">PDF</strong>
+              <span className="hero-stat-copy">Cierre con override trazable</span>
+            </div>
+          </div>
         </div>
 
         <div className="dashboard-hero-panel">
+          <p className="panel-kicker">Caso para abrir ahora</p>
+          <div className="hero-spotlight-card">
+            <div className="hero-spotlight-row">
+              <span className="meta-chip">
+                {nextCase.caseOrigin === "manual" ? "Ingreso manual" : `Escenario ${nextCase.escenario}`}
+              </span>
+              <WorkflowStateBadge state={getCaseState(nextCase).status} />
+            </div>
+            <h3 className="sidebar-title">
+              {nextCase.tipoArtefacto} {nextCase.marca} {nextCase.modelo}
+            </h3>
+            <p className="sidebar-copy">
+              {nextCase.caseOrigin === "manual"
+                ? "Ideal para probar cambios de texto, checkboxes, recalculo financiero y decision final."
+                : playbookLabels[nextCase.escenario]}
+            </p>
+          </div>
+
           <p className="panel-kicker">Recorrido sugerido</p>
           <div className="journey-list">
             {journeyCases.map((caseItem, index) => (
@@ -164,11 +200,11 @@ export function CaseInboxPage() {
           <div className="section-heading">
             <div>
               <p className="section-kicker">Bandeja operativa</p>
-              <h3 className="section-title">Ejemplos cargados y caso manual editable</h3>
+              <h3 className="section-title">Cockpit de casos para demo guiada o exploracion libre</h3>
             </div>
             <p className="section-copy">
-              Los ejemplos sostienen el relato comercial. El caso manual te deja ingresar datos
-              propios para demostrar la funcionalidad sin depender solo de mocks.
+              Cada fila muestra estado, evidencia, progreso y el punto exacto donde retomar la
+              simulacion sin perder el hilo comercial.
             </p>
           </div>
 
