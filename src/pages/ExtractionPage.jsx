@@ -21,7 +21,7 @@ export function ExtractionPage() {
         caseItem={caseItem}
         currentStep={0}
         eyebrow="Paso 1"
-        title="Extraccion documental y control de integridad"
+        title="Recepcion inteligente y control de integridad"
         actions={
           analysis.canAdvanceFromExtraction ? (
             <Link className="primary-button" to={`/caso/${caseItem.idTicket}/decision`}>
@@ -52,6 +52,25 @@ export function ExtractionPage() {
       >
         <div className="analysis-grid">
           <div className="analysis-column">
+            <div className="value-banner">
+              <div>
+                <p className="section-kicker">Valor para la operacion</p>
+                <h3 className="section-title small">
+                  Bloquea expedientes debiles antes de consumir revision especializada.
+                </h3>
+              </div>
+              <div className="value-banner-metrics">
+                <div className="value-banner-stat">
+                  <strong>Gate documental</strong>
+                  <span>Solo avanza lo que esta listo para decision.</span>
+                </div>
+                <div className="value-banner-stat">
+                  <strong>Menos reproceso</strong>
+                  <span>Menos idas y vueltas con antecedentes incompletos.</span>
+                </div>
+              </div>
+            </div>
+
             <div className="info-card">
               <div className="section-heading compact">
                 <div>
@@ -60,7 +79,7 @@ export function ExtractionPage() {
                   </p>
                   <h3 className="section-title">
                     {isManualCase
-                      ? "Completa la informacion minima para activar el flujo"
+                      ? "Completa la informacion minima para activar la plataforma"
                       : "Extraccion estructurada del informe tecnico"}
                   </h3>
                 </div>
@@ -208,7 +227,7 @@ export function ExtractionPage() {
 
           <div className="analysis-column">
             <div className="info-card">
-              <p className="section-kicker">Checklist de calidad</p>
+              <p className="section-kicker">Gate de calidad documental</p>
               <div className="checklist-stack">
                 <ValidationRow
                   editable={isManualCase}
@@ -245,16 +264,16 @@ export function ExtractionPage() {
             ) : null}
 
             <div className={`info-card ${analysis.missingFields.length > 0 ? "info-card-alert" : ""}`}>
-              <p className="section-kicker">Estado de integridad</p>
+              <p className="section-kicker">Decision del filtro inicial</p>
               <h3 className="section-title">
                 {analysis.missingFields.length > 0
-                  ? "Caso incompleto: requiere alerta"
-                  : "Documento apto para analisis automatico"}
+                  ? "Caso incompleto: no conviene seguir sin corregir"
+                  : "Caso listo para pasar a criterio tecnico"}
               </h3>
               <p className="section-copy">
                 {analysis.missingFields.length > 0
-                  ? `Faltan estos campos obligatorios: ${analysis.missingFields.join(", ")}.`
-                  : "La informacion minima requerida esta presente para continuar con criterio tecnico y decision."}
+                  ? `Faltan estos campos obligatorios: ${analysis.missingFields.join(", ")}. La plataforma evita que el equipo avance con informacion fragil.`
+                  : "La informacion minima requerida esta presente para continuar con criterio tecnico sin perder tiempo en validaciones manuales basicas."}
               </p>
             </div>
           </div>

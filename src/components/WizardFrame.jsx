@@ -6,10 +6,30 @@ import { WorkflowStateBadge } from "./WorkflowStateBadge";
 import { useDemo } from "../context/DemoContext";
 
 const steps = [
-  { title: "Extraccion", path: "extraccion" },
-  { title: "Criterio tecnico", path: "decision" },
-  { title: "Regla financiera", path: "financiero" },
-  { title: "Cierre y override", path: "resultado" },
+  {
+    title: "Extraccion",
+    path: "extraccion",
+    copy: "Valida integridad y evita reproceso temprano.",
+    value: "Gate documental",
+  },
+  {
+    title: "Criterio tecnico",
+    path: "decision",
+    copy: "Explica la recomendacion con señales visibles.",
+    value: "Decision explicable",
+  },
+  {
+    title: "Regla financiera",
+    path: "financiero",
+    copy: "Simula payout y criterio economico editable.",
+    value: "Payout defendible",
+  },
+  {
+    title: "Cierre y override",
+    path: "resultado",
+    copy: "Deja trazabilidad, control humano y salida final.",
+    value: "Cierre controlado",
+  },
 ];
 
 export function WizardFrame({
@@ -24,6 +44,7 @@ export function WizardFrame({
   const { getCaseState, getFinalDecision, visitStep } = useDemo();
   const caseState = getCaseState(caseItem);
   const completionValue = Math.round(((currentStep + 1) / steps.length) * 100);
+  const currentStepMeta = steps[currentStep];
 
   useEffect(() => {
     visitStep(caseItem, steps[currentStep].path);
@@ -56,11 +77,13 @@ export function WizardFrame({
           </div>
 
           <div className="wizard-progress-panel">
-            <p className="field-label">Avance del recorrido</p>
+            <p className="field-label">Valor de esta etapa</p>
+            <div className="wizard-value-chip">{currentStepMeta.value}</div>
             <div className="wizard-progress-heading">
               <strong>{completionValue}%</strong>
               <span>{currentStep + 1} de 4 etapas</span>
             </div>
+            <p className="wizard-progress-copy">{currentStepMeta.copy}</p>
             <div className="progress-track wizard-progress-track">
               <span className="progress-fill" style={{ width: `${completionValue}%` }} />
             </div>
@@ -72,18 +95,20 @@ export function WizardFrame({
               const isComplete = currentStep > index || caseState.status === "closed";
 
               return (
-                <div
+                <Link
                   key={step.path}
                   className={`step-card ${isActive ? "step-card-active" : ""} ${
                     isComplete ? "step-card-complete" : ""
                   }`}
+                  to={`/caso/${caseItem.idTicket}/${step.path}`}
                 >
                   <div className="step-index">{isComplete ? "OK" : `0${index + 1}`}</div>
                   <div>
                     <p className="step-label">Paso {index + 1}</p>
                     <p className="step-title">{step.title}</p>
+                    <p className="step-copy">{step.copy}</p>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>

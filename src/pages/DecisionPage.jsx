@@ -28,7 +28,7 @@ export function DecisionPage() {
         caseItem={caseItem}
         currentStep={1}
         eyebrow="Paso 2"
-        title="Criterio tecnico y matriz de decision"
+        title="Motor de criterio tecnico y recomendacion explicable"
         actions={
           positiveFlow ? (
             <Link className="primary-button" to={`/caso/${caseItem.idTicket}/financiero`}>
@@ -58,6 +58,25 @@ export function DecisionPage() {
         }
       >
         <div className="analysis-grid single-flow">
+          <div className="value-banner">
+            <div>
+              <p className="section-kicker">Valor para el analista</p>
+              <h3 className="section-title small">
+                La plataforma no solo recomienda: muestra por que recomienda.
+              </h3>
+            </div>
+            <div className="value-banner-metrics">
+              <div className="value-banner-stat">
+                <strong>Senales visibles</strong>
+                <span>Texto y narrativa quedan conectados a la decision.</span>
+              </div>
+              <div className="value-banner-stat">
+                <strong>Mas confianza</strong>
+                <span>La recomendacion es defendible ante cliente y supervisor.</span>
+              </div>
+            </div>
+          </div>
+
           <div className="info-card">
             <div className="signal-grid">
               <DecisionSignal
@@ -85,7 +104,7 @@ export function DecisionPage() {
             <div className="section-heading compact">
               <div>
                 <p className="section-kicker">Analisis semantico</p>
-                <h3 className="section-title">Evidencias que activan la decision</h3>
+                <h3 className="section-title">Evidencias que justifican la recomendacion</h3>
               </div>
             </div>
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CaseStatusBadge } from "../components/CaseStatusBadge";
@@ -59,6 +59,7 @@ export function CaseInboxPage() {
   const manualCase = dashboardMetrics.manualCase;
   const [showManualForm, setShowManualForm] = useState(!manualCase);
   const [manualForm, setManualForm] = useState(() => buildManualFormState(manualCase));
+  const manualCaseRef = useRef(null);
 
   const journeyCases = useMemo(
     () =>
@@ -99,16 +100,29 @@ export function CaseInboxPage() {
     navigate(startCase(createdCase));
   }
 
+  function openManualEditor() {
+    setManualForm(buildManualFormState(manualCase));
+    setShowManualForm(true);
+  }
+
+  useEffect(() => {
+    if (!showManualForm || !manualCaseRef.current) return;
+
+    manualCaseRef.current.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, [showManualForm]);
+
   return (
     <AppShell>
       <section className="dashboard-hero">
         <div className="dashboard-hero-copy">
-          <span className="hero-pill">Centro de operaciones para la demo</span>
-          <h2>Una simulacion completa, navegable y creible para vender el agente de auditoria tecnica.</h2>
+          <span className="hero-pill">Plataforma de resolucion asistida</span>
+          <h2>La forma mas clara de mostrar que la auditoria tecnica puede ser rapida, explicable y accionable.</h2>
           <p>
-            La bandeja mezcla storytelling comercial y operacion real: cuatro escenarios
-            precargados para conducir la narrativa y un ticket manual para demostrar ingreso,
-            recalculo, override y cierre en vivo sin depender solo de mocks.
+            Esta demo no solo muestra pantallas: muestra como la plataforma filtra expedientes,
+            explica decisiones, simula payout y mantiene control humano sin sacrificar velocidad.
           </p>
 
           <div className="hero-actions">
@@ -119,7 +133,7 @@ export function CaseInboxPage() {
             </button>
             <button
               className="secondary-button"
-              onClick={() => setShowManualForm((current) => !current)}
+              onClick={openManualEditor}
               type="button"
             >
               {manualCase ? "Editar caso manual" : "Crear caso manual"}
@@ -128,25 +142,25 @@ export function CaseInboxPage() {
 
           <div className="hero-stat-strip">
             <div className="hero-stat-card">
-              <span className="hero-stat-label">Recorridos</span>
+              <span className="hero-stat-label">Escenarios listos</span>
               <strong className="hero-stat-value">5</strong>
-              <span className="hero-stat-copy">4 ejemplos + 1 ticket editable</span>
+              <span className="hero-stat-copy">historias cargadas para demostrar valor en minutos</span>
             </div>
             <div className="hero-stat-card">
-              <span className="hero-stat-label">Motor</span>
-              <strong className="hero-stat-value">70%</strong>
-              <span className="hero-stat-copy">Regla financiera ajustable</span>
+              <span className="hero-stat-label">Decision explicable</span>
+              <strong className="hero-stat-value">IA + reglas</strong>
+              <span className="hero-stat-copy">criterio tecnico y regla economica en una sola vista</span>
             </div>
             <div className="hero-stat-card">
-              <span className="hero-stat-label">Salida</span>
-              <strong className="hero-stat-value">PDF</strong>
-              <span className="hero-stat-copy">Cierre con override trazable</span>
+              <span className="hero-stat-label">Control final</span>
+              <strong className="hero-stat-value">Override</strong>
+              <span className="hero-stat-copy">cierre con trazabilidad lista para cliente o sponsor</span>
             </div>
           </div>
         </div>
 
         <div className="dashboard-hero-panel">
-          <p className="panel-kicker">Caso para abrir ahora</p>
+          <p className="panel-kicker">Demostracion recomendada</p>
           <div className="hero-spotlight-card">
             <div className="hero-spotlight-row">
               <span className="meta-chip">
@@ -159,23 +173,32 @@ export function CaseInboxPage() {
             </h3>
             <p className="sidebar-copy">
               {nextCase.caseOrigin === "manual"
-                ? "Ideal para probar cambios de texto, checkboxes, recalculo financiero y decision final."
-                : playbookLabels[nextCase.escenario]}
+                ? "Ideal para mostrar flexibilidad: edicion en vivo, recálculo y override con control."
+                : `${playbookLabels[nextCase.escenario]}. Perfecto para abrir la conversacion sobre valor operacional.`}
             </p>
           </div>
 
-          <p className="panel-kicker">Recorrido sugerido</p>
+          <p className="panel-kicker">Recorrido de venta</p>
           <div className="journey-list">
             {journeyCases.map((caseItem, index) => (
-              <div className="journey-item" key={caseItem.idTicket}>
+              <button
+                className="journey-item journey-item-button"
+                key={caseItem.idTicket}
+                onClick={() => openCase(caseItem)}
+                type="button"
+              >
                 <span className="journey-index">0{index + 1}</span>
                 <div>
                   <p className="journey-title">{caseItem.escenario}</p>
                   <p className="journey-copy">{playbookLabels[caseItem.escenario]}</p>
                 </div>
-              </div>
+              </button>
             ))}
-            <div className="journey-item">
+            <button
+              className="journey-item journey-item-button"
+              onClick={openManualEditor}
+              type="button"
+            >
               <span className="journey-index">05</span>
               <div>
                 <p className="journey-title">Manual</p>
@@ -183,7 +206,7 @@ export function CaseInboxPage() {
                   Permite ingresar informacion propia y tensionar el flujo en vivo.
                 </p>
               </div>
-            </div>
+            </button>
           </div>
         </div>
       </section>
@@ -195,16 +218,34 @@ export function CaseInboxPage() {
         <MetricCard label="Casos manuales" value={dashboardMetrics.hasManualCase ? 1 : 0} />
       </section>
 
+      <section className="value-proof-grid">
+        <ValueProofCard
+          copy="La plataforma corta casos incompletos antes de que lleguen a revisión técnica costosa."
+          kicker="1. Filtra antes"
+          title="Reduce friccion operativa desde el primer gate"
+        />
+        <ValueProofCard
+          copy="La recomendación combina narrativa, reglas y trazabilidad para que el equipo pueda sostenerla."
+          kicker="2. Explica mejor"
+          title="Convierte criterio tecnico en una decision defendible"
+        />
+        <ValueProofCard
+          copy="El analista conserva la última palabra y la salida queda lista para presentar o exportar."
+          kicker="3. Cierra mejor"
+          title="Acelera el cierre sin perder control humano"
+        />
+      </section>
+
       <section className="queue-layout">
         <div className="surface-card">
           <div className="section-heading">
             <div>
-              <p className="section-kicker">Bandeja operativa</p>
-              <h3 className="section-title">Cockpit de casos para demo guiada o exploracion libre</h3>
+              <p className="section-kicker">Portafolio de casos</p>
+              <h3 className="section-title">Casos listos para demostrar velocidad, criterio y cierre</h3>
             </div>
             <p className="section-copy">
-              Cada fila muestra estado, evidencia, progreso y el punto exacto donde retomar la
-              simulacion sin perder el hilo comercial.
+              Cada fila abre un relato distinto de valor: aprobacion atribuible, rechazo tecnico,
+              alerta documental, indemnizacion y stress test manual.
             </p>
           </div>
 
@@ -282,21 +323,21 @@ export function CaseInboxPage() {
 
         <div className="sidebar-stack">
           <div className="surface-card surface-card-accent">
-            <p className="panel-kicker">Caso recomendado ahora</p>
+            <p className="panel-kicker">Escenario con mejor narrativa</p>
             <h3 className="sidebar-title">
               {nextCase.caseOrigin === "manual" ? "Caso manual" : `Escenario ${nextCase.escenario}`}
             </h3>
             <p className="sidebar-copy">
               {nextCase.caseOrigin === "manual"
-                ? "Usa este ticket para demostrar ingreso de informacion y recalculo en vivo."
-                : `${playbookLabels[nextCase.escenario]}. Ideal para mantener la narrativa comercial de la demo.`}
+                ? "Usa este ticket para mostrar flexibilidad operativa y cambios en vivo sin depender del mock."
+                : `${playbookLabels[nextCase.escenario]}. Ideal para abrir la demo con una historia simple y convincente.`}
             </p>
             <button className="primary-button w-full" onClick={() => openCase(nextCase)} type="button">
               Abrir caso sugerido
             </button>
           </div>
 
-          <div className="surface-card">
+          <div className="surface-card" ref={manualCaseRef}>
             <div className="section-heading compact">
               <div>
                 <p className="panel-kicker">Caso manual</p>
@@ -307,8 +348,8 @@ export function CaseInboxPage() {
             </div>
 
             <p className="sidebar-copy">
-              Completa solo la informacion necesaria para disparar extraccion, criterio tecnico y
-              regla financiera. Luego puedes seguir ajustando desde el flujo.
+              Completa solo la informacion minima y demuestra como la plataforma se adapta a un
+              caso nuevo, recalcula y deja trazabilidad sin perder consistencia.
             </p>
 
             {showManualForm ? (
@@ -430,8 +471,7 @@ export function CaseInboxPage() {
                 <button
                   className="secondary-button w-full"
                   onClick={() => {
-                    setManualForm(buildManualFormState(manualCase));
-                    setShowManualForm(true);
+                    openManualEditor();
                   }}
                   type="button"
                 >
@@ -452,5 +492,15 @@ function MetricCard({ label, value }) {
       <p className="metric-label">{label}</p>
       <p className="metric-value">{value}</p>
     </div>
+  );
+}
+
+function ValueProofCard({ kicker, title, copy }) {
+  return (
+    <article className="value-proof-card">
+      <p className="section-kicker">{kicker}</p>
+      <h3 className="section-title small">{title}</h3>
+      <p className="section-copy">{copy}</p>
+    </article>
   );
 }

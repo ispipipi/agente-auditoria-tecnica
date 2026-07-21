@@ -85,7 +85,7 @@ export function ResultPage() {
         caseItem={caseItem}
         currentStep={3}
         eyebrow="Paso 4"
-        title="Cierre del caso, override y salida de demo"
+        title="Resolucion ejecutiva, override y salida premium"
         aside={
           <div className="insight-stack">
             <InsightTile label="Decision agente" value={analysis.decision} />
@@ -96,6 +96,25 @@ export function ResultPage() {
         }
       >
         <div className="space-y-6">
+          <div className="value-banner">
+            <div>
+              <p className="section-kicker">Valor de cierre</p>
+              <h3 className="section-title small">
+                La plataforma acelera la resolucion, pero deja la ultima palabra en manos del equipo.
+              </h3>
+            </div>
+            <div className="value-banner-metrics">
+              <div className="value-banner-stat">
+                <strong>Trazabilidad final</strong>
+                <span>La recomendacion y el ajuste humano quedan documentados.</span>
+              </div>
+              <div className="value-banner-stat">
+                <strong>Salida lista</strong>
+                <span>El caso queda listo para impresion, PDF o presentacion ejecutiva.</span>
+              </div>
+            </div>
+          </div>
+
           <div className="closure-banner">
             <div>
               <p className="section-kicker">Resultado consolidado</p>
@@ -176,7 +195,7 @@ export function ResultPage() {
             <div className="analysis-column">
               <div className="info-card">
                 <p className="section-kicker">Intervencion humana</p>
-                <h3 className="section-title small">Control final antes del cierre</h3>
+                <h3 className="section-title small">Control premium antes del cierre</h3>
                 <p className="section-copy">
                   Puedes aprobar la salida del agente o reemplazarla por una decision final distinta
                   con trazabilidad obligatoria.

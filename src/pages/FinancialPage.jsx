@@ -27,7 +27,7 @@ export function FinancialPage() {
         caseItem={caseItem}
         currentStep={2}
         eyebrow="Paso 3"
-        title="Simulador financiero de la regla del 70%"
+        title="Motor economico y simulador de payout"
         actions={
           <Link className="primary-button" to={`/caso/${caseItem.idTicket}/resultado`}>
             Continuar al cierre del caso
@@ -49,11 +49,30 @@ export function FinancialPage() {
         }
       >
         <div className="analysis-grid single-flow">
+          <div className="value-banner">
+            <div>
+              <p className="section-kicker">Valor para negocio</p>
+              <h3 className="section-title small">
+                Aterriza la recomendacion tecnica en una propuesta economica editable y defendible.
+              </h3>
+            </div>
+            <div className="value-banner-metrics">
+              <div className="value-banner-stat">
+                <strong>Regla visible</strong>
+                <span>El umbral financiero se entiende en segundos.</span>
+              </div>
+              <div className="value-banner-stat">
+                <strong>Simulacion en vivo</strong>
+                <span>Permite tensionar escenarios comerciales durante la demo.</span>
+              </div>
+            </div>
+          </div>
+
           <div className="info-card">
             <div className="section-heading compact">
               <div>
                 <p className="section-kicker">Motor economico</p>
-                <h3 className="section-title">Calculadora editable para la simulacion comercial</h3>
+                <h3 className="section-title">Calculadora editable para cierre con criterio</h3>
               </div>
             </div>
 
@@ -88,7 +107,8 @@ export function FinancialPage() {
 
             <div className="finance-rule-box">
               Si el presupuesto es menor o igual al 70% del valor comercial, el agente propone
-              reparar. Si lo supera, propone indemnizar.
+              reparar. Si lo supera, propone indemnizar y dejar una salida mas consistente para el
+              equipo.
             </div>
 
             {analysis.financial.decision === DECISION_LABELS.indemnify ? (
