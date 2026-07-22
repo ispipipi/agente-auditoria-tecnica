@@ -300,6 +300,12 @@ img {
   box-shadow: inset 0 0 0 1px rgba(43, 182, 115, 0.08);
 }
 
+.sidebar-nav-link-disabled {
+  opacity: 0.56;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.42);
+}
+
 .sidebar-nav-title {
   font-size: 0.95rem;
   font-weight: 700;
@@ -820,6 +826,13 @@ img {
 .step-card-complete {
   border-color: #b8dec9;
   background: #f1fbf6;
+}
+
+.step-card-disabled {
+  opacity: 0.6;
+  background: rgba(250, 252, 250, 0.9);
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 .step-index {

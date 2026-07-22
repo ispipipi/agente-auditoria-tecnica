@@ -14,6 +14,12 @@ const playbookLabels = {
 
 const playbookOrder = ["Aprobado", "Rechazado", "Incompleto", "Indemnizacion"];
 
+function getPrimaryCtaLabel(dashboardMetrics) {
+  if (dashboardMetrics.inReview > 0) return "Retomar caso en curso";
+  if (dashboardMetrics.closed > 0 && dashboardMetrics.pending > 0) return "Abrir siguiente playbook";
+  return "Iniciar demo recomendada";
+}
+
 function buildManualFormState(manualCase) {
   return {
     nCliente: manualCase?.nCliente ?? "12000001",
@@ -60,6 +66,7 @@ export function CaseInboxPage() {
   const [showManualForm, setShowManualForm] = useState(!manualCase);
   const [manualForm, setManualForm] = useState(() => buildManualFormState(manualCase));
   const manualCaseRef = useRef(null);
+  const primaryCtaLabel = getPrimaryCtaLabel(dashboardMetrics);
 
   const journeyCases = useMemo(
     () =>
@@ -127,9 +134,7 @@ export function CaseInboxPage() {
 
           <div className="hero-actions">
             <button className="primary-button" onClick={() => openCase(nextCase)} type="button">
-              {dashboardMetrics.pending === dashboardMetrics.total
-                ? "Iniciar demo guiada"
-                : "Continuar siguiente caso"}
+              {primaryCtaLabel}
             </button>
             <button
               className="secondary-button"
@@ -172,9 +177,11 @@ export function CaseInboxPage() {
               {nextCase.tipoArtefacto} {nextCase.marca} {nextCase.modelo}
             </h3>
             <p className="sidebar-copy">
-              {nextCase.caseOrigin === "manual"
-                ? "Ideal para mostrar flexibilidad: edicion en vivo, recálculo y override con control."
-                : `${playbookLabels[nextCase.escenario]}. Perfecto para abrir la conversacion sobre valor operacional.`}
+              {dashboardMetrics.inReview > 0
+                ? "Retoma exactamente el punto donde quedo la simulacion para no romper la narrativa."
+                : nextCase.caseOrigin === "manual"
+                  ? "Ideal para mostrar flexibilidad: edicion en vivo, recálculo y override con control."
+                  : `${playbookLabels[nextCase.escenario]}. Perfecto para abrir la conversacion sobre valor operacional.`}
             </p>
           </div>
 
@@ -333,7 +340,7 @@ export function CaseInboxPage() {
                 : `${playbookLabels[nextCase.escenario]}. Ideal para abrir la demo con una historia simple y convincente.`}
             </p>
             <button className="primary-button w-full" onClick={() => openCase(nextCase)} type="button">
-              Abrir caso sugerido
+              {dashboardMetrics.inReview > 0 ? "Retomar caso activo" : "Abrir caso sugerido"}
             </button>
           </div>
 

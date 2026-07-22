@@ -32,6 +32,12 @@ const steps = [
   },
 ];
 
+function canOpenStep(index, currentStep, caseState) {
+  if (caseState.status === "closed") return true;
+  if (index === currentStep) return true;
+  return index <= caseState.lastVisitedStep;
+}
+
 export function WizardFrame({
   caseItem,
   currentStep,
@@ -93,8 +99,9 @@ export function WizardFrame({
             {steps.map((step, index) => {
               const isActive = currentStep === index;
               const isComplete = currentStep > index || caseState.status === "closed";
+              const isAvailable = canOpenStep(index, currentStep, caseState);
 
-              return (
+              return isAvailable ? (
                 <Link
                   key={step.path}
                   className={`step-card ${isActive ? "step-card-active" : ""} ${
@@ -109,6 +116,15 @@ export function WizardFrame({
                     <p className="step-copy">{step.copy}</p>
                   </div>
                 </Link>
+              ) : (
+                <div className="step-card step-card-disabled" key={step.path}>
+                  <div className="step-index">{`0${index + 1}`}</div>
+                  <div>
+                    <p className="step-label">Paso {index + 1}</p>
+                    <p className="step-title">{step.title}</p>
+                    <p className="step-copy">{step.copy}</p>
+                  </div>
+                </div>
               );
             })}
           </div>

@@ -57,21 +57,55 @@ function getStagePath(stageKey, caseId) {
   return `/caso/${caseId}/resultado`;
 }
 
+function getPrimaryCtaLabel(dashboardMetrics) {
+  if (dashboardMetrics.inReview > 0) return "Retomar caso en curso";
+  if (dashboardMetrics.closed > 0 && dashboardMetrics.pending > 0) return "Abrir siguiente playbook";
+  return "Iniciar demo recomendada";
+}
+
+function getStepIndexByStage(stageKey) {
+  if (stageKey === "extraction") return 0;
+  if (stageKey === "decision") return 1;
+  if (stageKey === "financial") return 2;
+  if (stageKey === "result") return 3;
+  return -1;
+}
+
 export function AppShell({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { dashboardMetrics, getRecommendedCase, getCaseRoute, resetDemo } = useDemo();
+  const { dashboardMetrics, getCaseById, getCaseRoute, getCaseState, getRecommendedCase, resetDemo } =
+    useDemo();
   const nextCase = getRecommendedCase();
   const currentCaseId = getCurrentCaseId(location.pathname) ?? nextCase?.idTicket ?? null;
   const activeStage = getActiveStage(location.pathname);
   const activeStageData = shellStages.find((stage) => stage.key === activeStage) ?? shellStages[0];
+  const currentCase = currentCaseId ? getCaseById(currentCaseId) : null;
+  const currentCaseState = currentCase ? getCaseState(currentCase) : null;
   const completedCases = dashboardMetrics.closed;
   const completionRatio = Math.round((completedCases / dashboardMetrics.total) * 100);
   const reviewedCases = dashboardMetrics.inReview + dashboardMetrics.closed;
+  const primaryCtaLabel = getPrimaryCtaLabel(dashboardMetrics);
 
   function handleResetDemo() {
+    if (typeof window !== "undefined") {
+      const confirmed = window.confirm(
+        "Esto reiniciara toda la simulacion y volvera a la bandeja. Quieres continuar?",
+      );
+
+      if (!confirmed) return;
+    }
+
     resetDemo();
     navigate("/");
+  }
+
+  function canOpenStage(stageKey) {
+    if (stageKey === "inbox") return true;
+    if (!currentCase || !currentCaseState || location.pathname === "/") return false;
+    if (currentCaseState.status === "closed") return true;
+
+    return getStepIndexByStage(stageKey) <= currentCaseState.lastVisitedStep;
   }
 
   return (
@@ -96,18 +130,29 @@ export function AppShell({ children }) {
 
         <nav className="app-sidebar-nav">
           {shellStages.map((stage) => (
-            <Link
-              className={`sidebar-nav-link ${activeStage === stage.key ? "sidebar-nav-link-active" : ""}`}
-              key={stage.key}
-              to={getStagePath(stage.key, currentCaseId)}
-            >
-              <span className="sidebar-nav-title">
-                {stage.key === "inbox" ? "Bandeja de casos" : stage.label}
-              </span>
-              <span className="sidebar-nav-copy">
-                {stage.key === "inbox" ? "Entrada comercial y cockpit" : stage.copy}
-              </span>
-            </Link>
+            canOpenStage(stage.key) ? (
+              <Link
+                className={`sidebar-nav-link ${activeStage === stage.key ? "sidebar-nav-link-active" : ""}`}
+                key={stage.key}
+                to={getStagePath(stage.key, currentCaseId)}
+              >
+                <span className="sidebar-nav-title">
+                  {stage.key === "inbox" ? "Bandeja de casos" : stage.label}
+                </span>
+                <span className="sidebar-nav-copy">
+                  {stage.key === "inbox" ? "Entrada comercial y cockpit" : stage.copy}
+                </span>
+              </Link>
+            ) : (
+              <div className="sidebar-nav-link sidebar-nav-link-disabled" key={stage.key}>
+                <span className="sidebar-nav-title">
+                  {stage.key === "inbox" ? "Bandeja de casos" : stage.label}
+                </span>
+                <span className="sidebar-nav-copy">
+                  {stage.key === "inbox" ? "Entrada comercial y cockpit" : stage.copy}
+                </span>
+              </div>
+            )
           ))}
         </nav>
 
@@ -180,9 +225,7 @@ export function AppShell({ children }) {
                 onClick={() => navigate(getCaseRoute(nextCase))}
                 type="button"
               >
-                {dashboardMetrics.pending === dashboardMetrics.total
-                  ? "Iniciar demo"
-                  : "Continuar demo"}
+                {primaryCtaLabel}
               </button>
             </div>
           </div>

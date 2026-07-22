@@ -5,7 +5,7 @@ import { DECISION_LABELS, evaluateCase, findMarketPrice, getPriceKey } from "../
 
 const DemoContext = createContext(null);
 
-const STORAGE_KEY = "agente-auditoria-tecnica-demo-v3";
+const STORAGE_KEY = "agente-auditoria-tecnica-demo-v4";
 const STEP_SEQUENCE = ["extraccion", "decision", "financiero", "resultado"];
 const DEMO_PLAYBOOK = ["Aprobado", "Rechazado", "Incompleto", "Indemnizacion"];
 const MANUAL_CASE_ID = "MANUAL-001";
@@ -76,7 +76,7 @@ function readStoredState() {
   if (typeof window === "undefined") return null;
 
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.sessionStorage.getItem(STORAGE_KEY);
     return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
@@ -148,7 +148,7 @@ export function DemoProvider({ children }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    window.localStorage.setItem(
+    window.sessionStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
         manualCase: cases.find((item) => item.caseOrigin === "manual") ?? null,
@@ -391,6 +391,10 @@ export function DemoProvider({ children }) {
     setPriceMap(buildInitialPrices());
     setOverrides({});
     setWorkflow(buildInitialWorkflow(baseCases));
+
+    if (typeof window !== "undefined") {
+      window.sessionStorage.removeItem(STORAGE_KEY);
+    }
   }, []);
 
   const getRecommendedCase = useCallback((excludeIdTicket = null) => {
