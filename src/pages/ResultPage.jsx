@@ -156,7 +156,7 @@ export function ResultPage() {
                 </p>
               </div>
               <div className="hero-actions">
-                <button className="secondary-button" onClick={() => navigate("/")} type="button">
+                <button className="secondary-button" onClick={() => navigate("/casos")} type="button">
                   Volver a bandeja
                 </button>
                 <button

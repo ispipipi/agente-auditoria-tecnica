@@ -1,60 +1,42 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useDemo } from "../context/DemoContext";
 
-const shellStages = [
+const shellSections = {
+  dashboard: {
+    title: "Dashboard Ejecutivo",
+    copy: "Vista resumida para abrir la historia correcta y demostrar valor en segundos.",
+    impact: "Conteo real por estado y drill-down directo a la operacion.",
+  },
+  cases: {
+    title: "Bandeja de Casos",
+    copy: "Cockpit operacional para abrir tickets, revisar estados y tensionar escenarios.",
+    impact: "Casos filtrables, recorrido claro y entrada manual en un solo lugar.",
+  },
+  wizard: {
+    title: "Analisis de Caso",
+    copy: "Extraccion, criterio tecnico, payout y cierre en una secuencia controlada.",
+    impact: "Decision explicable con override y salida lista para presentar.",
+  },
+};
+
+const mainNavItems = [
   {
-    key: "inbox",
-    label: "Bandeja",
-    copy: "Casos, narrativa comercial y valor visible",
-    impact: "Visibilidad ejecutiva del flujo completo",
+    key: "dashboard",
+    label: "Dashboard",
+    copy: "Resumen ejecutivo",
+    to: "/",
   },
   {
-    key: "extraction",
-    label: "Extraccion",
-    copy: "Integridad, calidad y filtro documental",
-    impact: "Menos reproceso desde el primer gate",
-  },
-  {
-    key: "decision",
-    label: "Reglas",
-    copy: "Criterio tecnico con recomendacion explicable",
-    impact: "Decisiones defendibles frente a cliente y analista",
-  },
-  {
-    key: "financial",
-    label: "Financiero",
-    copy: "Simulacion economica y propuesta de payout",
-    impact: "Cierre mas rapido con criterio economico editable",
-  },
-  {
-    key: "result",
-    label: "Cierre",
-    copy: "Override, trazabilidad y salida ejecutiva",
-    impact: "Control humano sin perder velocidad",
+    key: "cases",
+    label: "Bandeja de Casos",
+    copy: "Operacion y filtros",
+    to: "/casos",
   },
 ];
-
-function getActiveStage(pathname) {
-  if (pathname.includes("/extraccion")) return "extraction";
-  if (pathname.includes("/decision")) return "decision";
-  if (pathname.includes("/financiero")) return "financial";
-  if (pathname.includes("/resultado")) return "result";
-  return "inbox";
-}
 
 function getCurrentCaseId(pathname) {
   const match = pathname.match(/\/caso\/([^/]+)/);
   return match?.[1] ?? null;
-}
-
-function getStagePath(stageKey, caseId) {
-  if (stageKey === "inbox") return "/";
-  if (!caseId) return "/";
-
-  if (stageKey === "extraction") return `/caso/${caseId}/extraccion`;
-  if (stageKey === "decision") return `/caso/${caseId}/decision`;
-  if (stageKey === "financial") return `/caso/${caseId}/financiero`;
-  return `/caso/${caseId}/resultado`;
 }
 
 function getPrimaryCtaLabel(dashboardMetrics) {
@@ -63,34 +45,41 @@ function getPrimaryCtaLabel(dashboardMetrics) {
   return "Iniciar demo recomendada";
 }
 
-function getStepIndexByStage(stageKey) {
-  if (stageKey === "extraction") return 0;
-  if (stageKey === "decision") return 1;
-  if (stageKey === "financial") return 2;
-  if (stageKey === "result") return 3;
-  return -1;
+function getSectionKey(pathname) {
+  if (pathname.startsWith("/caso/")) return "wizard";
+  if (pathname.startsWith("/casos")) return "cases";
+  return "dashboard";
 }
 
 export function AppShell({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { dashboardMetrics, getCaseById, getCaseRoute, getCaseState, getRecommendedCase, resetDemo } =
-    useDemo();
+  const {
+    dashboardMetrics,
+    executiveOverview,
+    getCaseById,
+    getCaseRoute,
+    getCaseState,
+    getPresentationState,
+    getRecommendedCase,
+    resetDemo,
+  } = useDemo();
+  const sectionKey = getSectionKey(location.pathname);
+  const sectionMeta = shellSections[sectionKey];
   const nextCase = getRecommendedCase();
-  const currentCaseId = getCurrentCaseId(location.pathname) ?? nextCase?.idTicket ?? null;
-  const activeStage = getActiveStage(location.pathname);
-  const activeStageData = shellStages.find((stage) => stage.key === activeStage) ?? shellStages[0];
+  const currentCaseId = getCurrentCaseId(location.pathname);
   const currentCase = currentCaseId ? getCaseById(currentCaseId) : null;
   const currentCaseState = currentCase ? getCaseState(currentCase) : null;
+  const currentPresentationState = currentCase ? getPresentationState(currentCase) : null;
   const completedCases = dashboardMetrics.closed;
-  const completionRatio = Math.round((completedCases / dashboardMetrics.total) * 100);
-  const reviewedCases = dashboardMetrics.inReview + dashboardMetrics.closed;
+  const completionRatio =
+    dashboardMetrics.total > 0 ? Math.round((completedCases / dashboardMetrics.total) * 100) : 0;
   const primaryCtaLabel = getPrimaryCtaLabel(dashboardMetrics);
 
   function handleResetDemo() {
     if (typeof window !== "undefined") {
       const confirmed = window.confirm(
-        "Esto reiniciara toda la simulacion y volvera a la bandeja. Quieres continuar?",
+        "Esto reiniciara la simulacion y te llevara al dashboard principal. Quieres continuar?",
       );
 
       if (!confirmed) return;
@@ -98,14 +87,6 @@ export function AppShell({ children }) {
 
     resetDemo();
     navigate("/");
-  }
-
-  function canOpenStage(stageKey) {
-    if (stageKey === "inbox") return true;
-    if (!currentCase || !currentCaseState || location.pathname === "/") return false;
-    if (currentCaseState.status === "closed") return true;
-
-    return getStepIndexByStage(stageKey) <= currentCaseState.lastVisitedStep;
   }
 
   return (
@@ -120,66 +101,74 @@ export function AppShell({ children }) {
         </div>
 
         <div className="sidebar-module">
-          <p className="sidebar-module-label">Plataforma SaaS</p>
-          <h2 className="sidebar-module-title">Resolucion clara para casos tecnicos</h2>
+          <p className="sidebar-module-label">Sistema de decision</p>
+          <h2 className="sidebar-module-title">Operacion premium con criterio visible</h2>
           <p className="sidebar-module-copy">
-            Una experiencia pensada para mostrar velocidad operativa, criterio explicable y
-            control humano en un flujo completo de punta a punta.
+            Un demo SaaS pensado para que negocio vea valor rapido y el equipo tecnico mantenga
+            control sobre cada cierre.
           </p>
         </div>
 
-        <nav className="app-sidebar-nav">
-          {shellStages.map((stage) => (
-            canOpenStage(stage.key) ? (
+        <nav className="app-sidebar-nav app-sidebar-nav-primary">
+          {mainNavItems.map((item) => {
+            const isActive =
+              item.key === "cases" ? sectionKey === "cases" || sectionKey === "wizard" : sectionKey === item.key;
+
+            return (
               <Link
-                className={`sidebar-nav-link ${activeStage === stage.key ? "sidebar-nav-link-active" : ""}`}
-                key={stage.key}
-                to={getStagePath(stage.key, currentCaseId)}
+                className={`sidebar-nav-link ${isActive ? "sidebar-nav-link-active" : ""}`}
+                key={item.key}
+                to={item.to}
               >
-                <span className="sidebar-nav-title">
-                  {stage.key === "inbox" ? "Bandeja de casos" : stage.label}
-                </span>
-                <span className="sidebar-nav-copy">
-                  {stage.key === "inbox" ? "Entrada comercial y cockpit" : stage.copy}
-                </span>
+                <span className="sidebar-nav-title">{item.label}</span>
+                <span className="sidebar-nav-copy">{item.copy}</span>
               </Link>
-            ) : (
-              <div className="sidebar-nav-link sidebar-nav-link-disabled" key={stage.key}>
-                <span className="sidebar-nav-title">
-                  {stage.key === "inbox" ? "Bandeja de casos" : stage.label}
-                </span>
-                <span className="sidebar-nav-copy">
-                  {stage.key === "inbox" ? "Entrada comercial y cockpit" : stage.copy}
-                </span>
-              </div>
-            )
-          ))}
+            );
+          })}
         </nav>
 
-        <div className="sidebar-proof-card">
-          <p className="sidebar-module-label">Valor visible</p>
-          <div className="sidebar-proof-item">
-            <strong>Filtra antes</strong>
-            <span>Detecta expedientes incompletos antes de consumir revision experta.</span>
+        {currentCase ? (
+          <div className="sidebar-case-card">
+            <p className="sidebar-module-label">Caso en foco</p>
+            <h3 className="sidebar-title">
+              Ticket {currentCase.idTicket}
+            </h3>
+            <p className="sidebar-copy">
+              {currentCase.tipoArtefacto} {currentCase.marca} {currentCase.modelo}
+            </p>
+            <div className="sidebar-metric-row">
+              <span>Estado del flujo</span>
+              <strong>{currentCaseState?.status === "closed" ? "Cerrado" : "En curso"}</strong>
+            </div>
+            <div className="sidebar-metric-row">
+              <span>Salida esperada</span>
+              <strong>{currentPresentationState?.label ?? "Sin clasificar"}</strong>
+            </div>
           </div>
-          <div className="sidebar-proof-item">
-            <strong>Explica mejor</strong>
-            <span>Convierte narrativa tecnica en una recomendacion entendible y trazable.</span>
+        ) : (
+          <div className="sidebar-case-card">
+            <p className="sidebar-module-label">Resumen actual</p>
+            <div className="sidebar-metric-row">
+              <span>Reparacion</span>
+              <strong>{executiveOverview.repair}</strong>
+            </div>
+            <div className="sidebar-metric-row">
+              <span>Indemnizacion</span>
+              <strong>{executiveOverview.indemnify}</strong>
+            </div>
+            <div className="sidebar-metric-row">
+              <span>Rechazado</span>
+              <strong>{executiveOverview.reject}</strong>
+            </div>
+            <div className="sidebar-metric-row">
+              <span>Incompleto</span>
+              <strong>{executiveOverview.incomplete}</strong>
+            </div>
           </div>
-          <div className="sidebar-proof-item">
-            <strong>Cierra con control</strong>
-            <span>Propone payout, habilita override y deja salida lista para presentacion.</span>
-          </div>
-        </div>
+        )}
 
         <div className="sidebar-module sidebar-module-compact">
           <p className="sidebar-module-label">Momentum de demo</p>
-          <div className="sidebar-metric-row">
-            <span>Casos con avance</span>
-            <strong>
-              {reviewedCases}/{dashboardMetrics.total}
-            </strong>
-          </div>
           <div className="sidebar-metric-row">
             <span>Casos cerrados</span>
             <strong>
@@ -191,12 +180,12 @@ export function AppShell({ children }) {
           </div>
           <div className="sidebar-metric-stack">
             <div className="sidebar-metric-row">
-              <span>Historias listas</span>
-              <strong>4 playbooks</strong>
+              <span>Overrides</span>
+              <strong>{dashboardMetrics.overridesApplied}</strong>
             </div>
             <div className="sidebar-metric-row">
-              <span>Stress test manual</span>
-              <strong>{dashboardMetrics.hasManualCase ? "Configurado" : "Disponible"}</strong>
+              <span>Caso manual</span>
+              <strong>{dashboardMetrics.hasManualCase ? "Activo" : "Disponible"}</strong>
             </div>
           </div>
         </div>
@@ -207,26 +196,28 @@ export function AppShell({ children }) {
           <div className="app-topbar-inner">
             <div className="topbar-meta">
               <p className="topbar-status">Vista activa</p>
-              <h2 className="topbar-title">{activeStageData.label}</h2>
-              <p className="topbar-copy">{activeStageData.copy}</p>
+              <h2 className="topbar-title">{sectionMeta.title}</h2>
+              <p className="topbar-copy">{sectionMeta.copy}</p>
             </div>
 
             <div className="topbar-value-card">
-              <p className="topbar-value-label">Valor para negocio</p>
-              <strong>{activeStageData.impact}</strong>
+              <p className="topbar-value-label">Valor visible</p>
+              <strong>{sectionMeta.impact}</strong>
             </div>
 
             <div className="topbar-actions">
               <button className="secondary-button" onClick={handleResetDemo} type="button">
                 Reiniciar simulacion
               </button>
-              <button
-                className="primary-button"
-                onClick={() => navigate(getCaseRoute(nextCase))}
-                type="button"
-              >
-                {primaryCtaLabel}
-              </button>
+              {nextCase ? (
+                <button
+                  className="primary-button"
+                  onClick={() => navigate(getCaseRoute(nextCase))}
+                  type="button"
+                >
+                  {primaryCtaLabel}
+                </button>
+              ) : null}
             </div>
           </div>
         </header>

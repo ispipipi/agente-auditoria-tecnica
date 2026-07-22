@@ -1,24 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CaseStatusBadge } from "../components/CaseStatusBadge";
 import { WorkflowStateBadge } from "../components/WorkflowStateBadge";
 import { useDemo } from "../context/DemoContext";
 
-const playbookLabels = {
-  Aprobado: "Valida atribuibilidad y reparacion",
-  Rechazado: "Muestra rechazo tecnico sin regla 70%",
-  Incompleto: "Explica alertas por calidad documental",
-  Indemnizacion: "Cierra con regla financiera y payout",
+const FILTER_LABELS = {
+  repair: "Reparacion",
+  indemnify: "Indemnizacion",
+  reject: "Rechazado",
+  incomplete: "Incompleto",
 };
 
-const playbookOrder = ["Aprobado", "Rechazado", "Incompleto", "Indemnizacion"];
-
-function getPrimaryCtaLabel(dashboardMetrics) {
-  if (dashboardMetrics.inReview > 0) return "Retomar caso en curso";
-  if (dashboardMetrics.closed > 0 && dashboardMetrics.pending > 0) return "Abrir siguiente playbook";
-  return "Iniciar demo recomendada";
-}
+const playbookOrder = ["Aprobado", "Rechazado", "Incompleto", "Indemnizacion", "Manual"];
 
 function buildManualFormState(manualCase) {
   return {
@@ -48,30 +42,30 @@ function buildManualFormState(manualCase) {
 
 export function CaseInboxPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     cases,
     createManualCase,
     dashboardMetrics,
+    executiveOverview,
     getCaseProgress,
     getCaseRoute,
     getCaseState,
     getFinalDecision,
+    getPresentationState,
     getRecommendedCase,
     startCase,
-    workflow,
   } = useDemo();
-
+  const filterKey = searchParams.get("estado");
   const nextCase = getRecommendedCase();
   const manualCase = dashboardMetrics.manualCase;
   const [showManualForm, setShowManualForm] = useState(!manualCase);
   const [manualForm, setManualForm] = useState(() => buildManualFormState(manualCase));
   const manualCaseRef = useRef(null);
-  const primaryCtaLabel = getPrimaryCtaLabel(dashboardMetrics);
 
-  const journeyCases = useMemo(
+  const orderedCases = useMemo(
     () =>
       cases
-        .filter((item) => item.caseOrigin === "demo")
         .slice()
         .sort(
           (left, right) =>
@@ -79,6 +73,11 @@ export function CaseInboxPage() {
         ),
     [cases],
   );
+
+  const filteredCases = useMemo(() => {
+    if (!filterKey || !FILTER_LABELS[filterKey]) return orderedCases;
+    return orderedCases.filter((item) => getPresentationState(item).key === filterKey);
+  }, [filterKey, getPresentationState, orderedCases]);
 
   function openCase(caseItem) {
     const state = getCaseState(caseItem);
@@ -112,6 +111,10 @@ export function CaseInboxPage() {
     setShowManualForm(true);
   }
 
+  function clearFilter() {
+    setSearchParams({});
+  }
+
   useEffect(() => {
     if (!showManualForm || !manualCaseRef.current) return;
 
@@ -123,261 +126,144 @@ export function CaseInboxPage() {
 
   return (
     <AppShell>
-      <section className="dashboard-hero">
-        <div className="dashboard-hero-copy">
-          <span className="hero-pill">Plataforma de resolucion asistida</span>
-          <h2>La forma mas clara de mostrar que la auditoria tecnica puede ser rapida, explicable y accionable.</h2>
-          <p>
-            Esta demo no solo muestra pantallas: muestra como la plataforma filtra expedientes,
-            explica decisiones, simula payout y mantiene control humano sin sacrificar velocidad.
+      <section className="page-hero page-hero-compact">
+        <div>
+          <span className="hero-pill">Bandeja de Casos</span>
+          <h2 className="page-title">Una vista operacional clara para demostrar criterio y cierre.</h2>
+          <p className="page-copy">
+            Abre cualquier caso, retoma donde quedo la simulacion o filtra por el resultado que
+            quieras presentar al cliente.
           </p>
-
-          <div className="hero-actions">
-            <button className="primary-button" onClick={() => openCase(nextCase)} type="button">
-              {primaryCtaLabel}
-            </button>
-            <button
-              className="secondary-button"
-              onClick={openManualEditor}
-              type="button"
-            >
-              {manualCase ? "Editar caso manual" : "Crear caso manual"}
-            </button>
-          </div>
-
-          <div className="hero-stat-strip">
-            <div className="hero-stat-card">
-              <span className="hero-stat-label">Escenarios listos</span>
-              <strong className="hero-stat-value">5</strong>
-              <span className="hero-stat-copy">historias cargadas para demostrar valor en minutos</span>
-            </div>
-            <div className="hero-stat-card">
-              <span className="hero-stat-label">Decision explicable</span>
-              <strong className="hero-stat-value">IA + reglas</strong>
-              <span className="hero-stat-copy">criterio tecnico y regla economica en una sola vista</span>
-            </div>
-            <div className="hero-stat-card">
-              <span className="hero-stat-label">Control final</span>
-              <strong className="hero-stat-value">Override</strong>
-              <span className="hero-stat-copy">cierre con trazabilidad lista para cliente o sponsor</span>
-            </div>
-          </div>
-
-          <div className="demo-agenda-card">
-            <div className="demo-agenda-copy">
-              <p className="section-kicker">Guion recomendado</p>
-              <h3 className="section-title small">Demo de 3 minutos con relato claro de valor</h3>
-              <p className="section-copy">
-                Abre con un caso atribuible, muestra la explicacion tecnica, aterriza la regla
-                financiera y cierra con control humano visible.
-              </p>
-            </div>
-            <div className="demo-agenda-steps">
-              <span>1. Filtro</span>
-              <span>2. Decision</span>
-              <span>3. Payout</span>
-              <span>4. Cierre</span>
-            </div>
-          </div>
         </div>
 
-        <div className="dashboard-hero-panel">
-          <p className="panel-kicker">Demostracion recomendada</p>
-          <div className="hero-spotlight-card">
-            <div className="hero-spotlight-row">
-              <span className="meta-chip">
-                {nextCase.caseOrigin === "manual" ? "Ingreso manual" : `Escenario ${nextCase.escenario}`}
-              </span>
-              <WorkflowStateBadge state={getCaseState(nextCase).status} />
-            </div>
-            <h3 className="sidebar-title">
-              {nextCase.tipoArtefacto} {nextCase.marca} {nextCase.modelo}
-            </h3>
-            <p className="sidebar-copy">
-              {dashboardMetrics.inReview > 0
-                ? "Retoma exactamente el punto donde quedo la simulacion para no romper la narrativa."
-                : nextCase.caseOrigin === "manual"
-                  ? "Ideal para mostrar flexibilidad: edicion en vivo, recálculo y override con control."
-                  : `${playbookLabels[nextCase.escenario]}. Perfecto para abrir la conversacion sobre valor operacional.`}
-            </p>
-            <div className="hero-spotlight-points">
-              <span>Impacto visible en menos de 1 minuto</span>
-              <span>Decision entendible para negocio y tecnica</span>
-              <span>Salida final lista para defender</span>
-            </div>
-          </div>
-
-          <p className="panel-kicker">Recorrido de venta</p>
-          <div className="journey-list">
-            {journeyCases.map((caseItem, index) => (
-              <button
-                className="journey-item journey-item-button"
-                key={caseItem.idTicket}
-                onClick={() => openCase(caseItem)}
-                type="button"
-              >
-                <span className="journey-index">0{index + 1}</span>
-                <div>
-                  <p className="journey-title">{caseItem.escenario}</p>
-                  <p className="journey-copy">{playbookLabels[caseItem.escenario]}</p>
-                </div>
-              </button>
-            ))}
-            <button
-              className="journey-item journey-item-button"
-              onClick={openManualEditor}
-              type="button"
-            >
-              <span className="journey-index">05</span>
-              <div>
-                <p className="journey-title">Manual</p>
-                <p className="journey-copy">
-                  Permite ingresar informacion propia y tensionar el flujo en vivo.
-                </p>
-              </div>
-            </button>
-          </div>
+        <div className="inbox-summary-grid">
+          <SummaryChip label="Reparacion" value={executiveOverview.repair} />
+          <SummaryChip label="Indemnizacion" value={executiveOverview.indemnify} />
+          <SummaryChip label="Rechazado" value={executiveOverview.reject} />
+          <SummaryChip label="Incompleto" value={executiveOverview.incomplete} />
         </div>
-      </section>
-
-      <section className="metrics-grid">
-        <MetricCard label="Casos pendientes" value={dashboardMetrics.pending} />
-        <MetricCard label="En revision" value={dashboardMetrics.inReview} />
-        <MetricCard label="Casos cerrados" value={dashboardMetrics.closed} />
-        <MetricCard label="Casos manuales" value={dashboardMetrics.hasManualCase ? 1 : 0} />
-      </section>
-
-      <section className="value-proof-grid">
-        <ValueProofCard
-          copy="La plataforma corta casos incompletos antes de que lleguen a revisión técnica costosa."
-          kicker="1. Filtra antes"
-          title="Reduce friccion operativa desde el primer gate"
-        />
-        <ValueProofCard
-          copy="La recomendación combina narrativa, reglas y trazabilidad para que el equipo pueda sostenerla."
-          kicker="2. Explica mejor"
-          title="Convierte criterio tecnico en una decision defendible"
-        />
-        <ValueProofCard
-          copy="El analista conserva la última palabra y la salida queda lista para presentar o exportar."
-          kicker="3. Cierra mejor"
-          title="Acelera el cierre sin perder control humano"
-        />
-      </section>
-
-      <section className="demo-script-grid">
-        <ValueProofCard
-          kicker="Momento 1"
-          title="Abre con un caso facil de entender"
-          copy="El escenario aprobado permite explicar rapidamente por que la plataforma acelera una resolucion que ya era probable."
-        />
-        <ValueProofCard
-          kicker="Momento 2"
-          title="Muestra un rechazo tecnico defendible"
-          copy="El escenario rechazado deja claro que la plataforma no solo aprueba: también protege criterio y consistencia."
-        />
-        <ValueProofCard
-          kicker="Momento 3"
-          title="Cierra con una salida lista para sponsor"
-          copy="La pantalla final convierte analisis tecnico en una recomendacion ejecutiva con override y trazabilidad."
-        />
       </section>
 
       <section className="queue-layout">
         <div className="surface-card">
           <div className="section-heading">
             <div>
-              <p className="section-kicker">Portafolio de casos</p>
-              <h3 className="section-title">Casos listos para demostrar velocidad, criterio y cierre</h3>
+              <p className="section-kicker">Operacion filtrable</p>
+              <h3 className="section-title">Bandeja lista para recorrer la demo completa</h3>
             </div>
-            <p className="section-copy">
-              Cada fila abre un relato distinto de valor: aprobacion atribuible, rechazo tecnico,
-              alerta documental, indemnizacion y stress test manual.
-            </p>
+
+            {filterKey && FILTER_LABELS[filterKey] ? (
+              <div className="filter-chip-row">
+                <span className="filter-chip">
+                  Filtrando por: <strong>{FILTER_LABELS[filterKey]}</strong>
+                </span>
+                <button className="secondary-button" onClick={clearFilter} type="button">
+                  Limpiar filtros
+                </button>
+              </div>
+            ) : (
+              <p className="section-copy">
+                Cada ticket abre una historia distinta: aprobacion, rechazo, alerta documental,
+                indemnizacion o stress test manual.
+              </p>
+            )}
           </div>
 
           <div className="queue-list">
-            {cases.map((caseItem) => {
-              const state = workflow[caseItem.idTicket];
-              const progress = getCaseProgress(caseItem);
-              const finalDecision =
-                state.status === "closed" ? getFinalDecision(caseItem) : undefined;
+            {filteredCases.length > 0 ? (
+              filteredCases.map((caseItem) => {
+                const state = getCaseState(caseItem);
+                const progress = getCaseProgress(caseItem);
+                const finalDecision =
+                  state.status === "closed" ? getFinalDecision(caseItem) : undefined;
+                const presentationState = getPresentationState(caseItem);
 
-              return (
-                <button
-                  className="queue-row"
-                  key={caseItem.idTicket}
-                  onClick={() => openCase(caseItem)}
-                  type="button"
-                >
-                  <div className="queue-row-main">
-                    <div className="queue-row-heading">
+                return (
+                  <button
+                    className="queue-row"
+                    key={caseItem.idTicket}
+                    onClick={() => openCase(caseItem)}
+                    type="button"
+                  >
+                    <div className="queue-row-main">
+                      <div className="queue-row-heading">
+                        <div>
+                          <p className="queue-ticket">Ticket {caseItem.idTicket}</p>
+                          <h4 className="queue-device">
+                            {caseItem.tipoArtefacto} {caseItem.marca} {caseItem.modelo}
+                          </h4>
+                          <p className="queue-copy">
+                            {caseItem.descripcionCausaFalla || "Caso listo para completar en vivo."}
+                          </p>
+                        </div>
+
+                        <div className="queue-badges">
+                          <WorkflowStateBadge state={state.status} />
+                          <CaseStatusBadge
+                            decision={finalDecision}
+                            pendingLabel={presentationState.label}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="queue-meta">
+                        <span className="meta-chip">
+                          {caseItem.caseOrigin === "manual" ? "Ingreso manual" : `Escenario ${caseItem.escenario}`}
+                        </span>
+                        <span className="meta-chip">
+                          {state.status === "closed"
+                            ? "Cierre completado"
+                            : state.status === "in_review"
+                              ? "Flujo en curso"
+                              : "Sin iniciar"}
+                        </span>
+                        <span className="meta-chip">
+                          {caseItem.evidenciaFotografica ? "Con evidencia" : "Sin evidencia"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="queue-row-side">
                       <div>
-                        <p className="queue-ticket">Ticket {caseItem.idTicket}</p>
-                        <h4 className="queue-device">
-                          {caseItem.tipoArtefacto} {caseItem.marca} {caseItem.modelo}
-                        </h4>
-                        <p className="queue-copy">{caseItem.descripcionCausaFalla || "Caso listo para completar en vivo."}</p>
+                        <p className="queue-side-label">Progreso</p>
+                        <p className="queue-side-value">{progress}%</p>
                       </div>
-
-                      <div className="queue-badges">
-                        <WorkflowStateBadge state={state.status} />
-                        <CaseStatusBadge
-                          decision={finalDecision}
-                          pendingLabel={caseItem.escenario}
-                        />
+                      <div className="progress-track">
+                        <span className="progress-fill" style={{ width: `${progress}%` }} />
                       </div>
-                    </div>
-
-                    <div className="queue-meta">
-                      <span className="meta-chip">
-                        Origen: {caseItem.caseOrigin === "manual" ? "Ingreso manual" : "Ejemplo cargado"}
-                      </span>
-                      <span className="meta-chip">
-                        {state.status === "closed"
-                          ? "Cierre completado"
-                          : state.status === "in_review"
-                            ? "Flujo en curso"
-                            : "Sin iniciar"}
-                      </span>
-                      <span className="meta-chip">
-                        {caseItem.evidenciaFotografica ? "Con evidencia" : "Sin evidencia"}
+                      <span className="queue-link">
+                        {state.status === "new"
+                          ? "Comenzar analisis"
+                          : state.status === "closed"
+                            ? "Ver cierre del caso"
+                            : "Continuar flujo"}
                       </span>
                     </div>
-                  </div>
-
-                  <div className="queue-row-side">
-                    <div>
-                      <p className="queue-side-label">Progreso</p>
-                      <p className="queue-side-value">{progress}%</p>
-                    </div>
-                    <div className="progress-track">
-                      <span className="progress-fill" style={{ width: `${progress}%` }} />
-                    </div>
-                    <span className="queue-link">
-                      {state.status === "new"
-                        ? "Comenzar simulacion"
-                        : state.status === "closed"
-                          ? "Ver cierre del caso"
-                          : "Continuar flujo"}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
+                  </button>
+                );
+              })
+            ) : (
+              <div className="empty-filter-card">
+                <p className="section-kicker">Sin coincidencias</p>
+                <h3 className="section-title small">No hay casos para este filtro en la bandeja actual.</h3>
+                <p className="section-copy">
+                  Limpia el filtro para volver a ver todos los tickets disponibles.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
         <div className="sidebar-stack">
           <div className="surface-card surface-card-accent">
-            <p className="panel-kicker">Escenario con mejor narrativa</p>
+            <p className="panel-kicker">Recorrido recomendado</p>
             <h3 className="sidebar-title">
               {nextCase.caseOrigin === "manual" ? "Caso manual" : `Escenario ${nextCase.escenario}`}
             </h3>
             <p className="sidebar-copy">
               {nextCase.caseOrigin === "manual"
                 ? "Usa este ticket para mostrar flexibilidad operativa y cambios en vivo sin depender del mock."
-                : `${playbookLabels[nextCase.escenario]}. Ideal para abrir la demo con una historia simple y convincente.`}
+                : "Ideal para abrir la conversacion con una historia clara y defender valor desde el primer clic."}
             </p>
             <div className="sidebar-value-list">
               <span>Lectura rapida del caso</span>
@@ -400,8 +286,8 @@ export function CaseInboxPage() {
             </div>
 
             <p className="sidebar-copy">
-              Completa solo la informacion minima y demuestra como la plataforma se adapta a un
-              caso nuevo, recalcula y deja trazabilidad sin perder consistencia.
+              Completa la informacion minima y demuestra como la plataforma se adapta a un caso
+              nuevo, recalcula y deja trazabilidad sin perder consistencia.
             </p>
 
             <div className="manual-hint-card">
@@ -469,7 +355,9 @@ export function CaseInboxPage() {
                   <span className="form-label">Causa de falla</span>
                   <textarea
                     className="form-input mt-2 min-h-28"
-                    onChange={(event) => handleManualChange("descripcionCausaFalla", event.target.value)}
+                    onChange={(event) =>
+                      handleManualChange("descripcionCausaFalla", event.target.value)
+                    }
                     value={manualForm.descripcionCausaFalla}
                   />
                 </label>
@@ -478,7 +366,9 @@ export function CaseInboxPage() {
                   <span className="form-label">Comentarios del tecnico</span>
                   <textarea
                     className="form-input mt-2 min-h-28"
-                    onChange={(event) => handleManualChange("comentariosObservaciones", event.target.value)}
+                    onChange={(event) =>
+                      handleManualChange("comentariosObservaciones", event.target.value)
+                    }
                     value={manualForm.comentariosObservaciones}
                   />
                 </label>
@@ -487,7 +377,9 @@ export function CaseInboxPage() {
                   <span className="form-label">Atribuible a suministro</span>
                   <select
                     className="form-input mt-2"
-                    onChange={(event) => handleManualChange("atribuibleSuministro", event.target.value)}
+                    onChange={(event) =>
+                      handleManualChange("atribuibleSuministro", event.target.value)
+                    }
                     value={manualForm.atribuibleSuministro}
                   >
                     <option value="null">Sin definir</option>
@@ -525,16 +417,10 @@ export function CaseInboxPage() {
               </form>
             ) : (
               <div className="manual-case-compact">
-                <p className="note-copy">
+                <p className="section-copy">
                   Ticket manual disponible para editar y recorrer en vivo.
                 </p>
-                <button
-                  className="secondary-button w-full"
-                  onClick={() => {
-                    openManualEditor();
-                  }}
-                  type="button"
-                >
+                <button className="secondary-button w-full" onClick={openManualEditor} type="button">
                   Editar datos del caso manual
                 </button>
               </div>
@@ -546,21 +432,11 @@ export function CaseInboxPage() {
   );
 }
 
-function MetricCard({ label, value }) {
+function SummaryChip({ label, value }) {
   return (
-    <div className="metric-card">
-      <p className="metric-label">{label}</p>
-      <p className="metric-value">{value}</p>
+    <div className="summary-chip">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
-  );
-}
-
-function ValueProofCard({ kicker, title, copy }) {
-  return (
-    <article className="value-proof-card">
-      <p className="section-kicker">{kicker}</p>
-      <h3 className="section-title small">{title}</h3>
-      <p className="section-copy">{copy}</p>
-    </article>
   );
 }

@@ -76,7 +76,7 @@ export function WizardFrame({
                 decision={caseState.status === "closed" ? getFinalDecision(caseItem) : undefined}
                 pendingLabel={caseItem.escenario}
               />
-              <Link className="secondary-button" to="/">
+              <Link className="secondary-button" to="/casos">
                 Volver a bandeja
               </Link>
             </div>

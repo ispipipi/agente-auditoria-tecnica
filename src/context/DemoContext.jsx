@@ -9,6 +9,12 @@ const STORAGE_KEY = "agente-auditoria-tecnica-demo-v4";
 const STEP_SEQUENCE = ["extraccion", "decision", "financiero", "resultado"];
 const DEMO_PLAYBOOK = ["Aprobado", "Rechazado", "Incompleto", "Indemnizacion"];
 const MANUAL_CASE_ID = "MANUAL-001";
+const PRESENTATION_STATE_LABELS = {
+  repair: "Reparacion",
+  indemnify: "Indemnizacion",
+  reject: "Rechazado",
+  incomplete: "Incompleto",
+};
 
 function enrichCase(caseItem, caseOrigin = "demo") {
   return {
@@ -228,6 +234,36 @@ export function DemoProvider({ children }) {
 
     return getAgentAnalysis(caseItem).decision;
   }, [getAgentAnalysis, overrides]);
+
+  const getPresentationState = useCallback((caseItem) => {
+    const finalDecision = getFinalDecision(caseItem);
+
+    if (finalDecision === DECISION_LABELS.repair) {
+      return {
+        key: "repair",
+        label: PRESENTATION_STATE_LABELS.repair,
+      };
+    }
+
+    if (finalDecision === DECISION_LABELS.indemnify) {
+      return {
+        key: "indemnify",
+        label: PRESENTATION_STATE_LABELS.indemnify,
+      };
+    }
+
+    if (finalDecision === DECISION_LABELS.reject) {
+      return {
+        key: "reject",
+        label: PRESENTATION_STATE_LABELS.reject,
+      };
+    }
+
+    return {
+      key: "incomplete",
+      label: PRESENTATION_STATE_LABELS.incomplete,
+    };
+  }, [getFinalDecision]);
 
   const visitStep = useCallback((caseItem, stepKey) => {
     setCaseWorkflow(caseItem.idTicket, (previous) => {
@@ -452,6 +488,24 @@ export function DemoProvider({ children }) {
     };
   }, [cases, overrides, getCaseState]);
 
+  const executiveOverview = useMemo(() => {
+    return cases
+      .filter((item) => item.caseOrigin === "demo")
+      .reduce(
+        (accumulator, item) => {
+          const presentationState = getPresentationState(item);
+          accumulator[presentationState.key] += 1;
+          return accumulator;
+        },
+        {
+          repair: 0,
+          indemnify: 0,
+          reject: 0,
+          incomplete: 0,
+        },
+      );
+  }, [cases, getPresentationState]);
+
   return (
     <DemoContext.Provider
       value={{
@@ -460,6 +514,7 @@ export function DemoProvider({ children }) {
         workflow,
         decisions: DECISION_LABELS,
         dashboardMetrics,
+        executiveOverview,
         getCaseById,
         getCaseState,
         getCaseRoute,
@@ -467,6 +522,7 @@ export function DemoProvider({ children }) {
         getMarketPriceForCase,
         getAgentAnalysis,
         getFinalDecision,
+        getPresentationState,
         getRecommendedCase,
         updateCase,
         updateMarketPrice,
