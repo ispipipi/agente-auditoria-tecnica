@@ -1691,6 +1691,10 @@ body {
   margin: 0 auto;
 }
 
+.app-topbar-inner {
+  gap: 1.15rem;
+}
+
 .app-topbar-inner,
 .surface-card,
 .summary-card,
@@ -1746,6 +1750,7 @@ body {
 
 .topbar-title {
   font-size: 2rem;
+  line-height: 1.02;
 }
 
 .topbar-value-card,
@@ -1774,6 +1779,12 @@ body {
   color: var(--text-inverse);
   font-size: 1rem;
   line-height: 1.45;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
 }
 
 .app-shell-body {
@@ -1811,10 +1822,10 @@ body {
 }
 
 .page-title {
-  max-width: 12ch;
-  font-size: clamp(2rem, 4vw, 3rem);
+  max-width: 11ch;
+  font-size: clamp(2.2rem, 4vw, 3.35rem);
   font-weight: 600;
-  line-height: 1.02;
+  line-height: 0.98;
 }
 
 .page-copy {
@@ -1882,6 +1893,14 @@ body {
   line-height: 1.55;
 }
 
+.status-overview-card strong,
+.dashboard-fact-row strong,
+.sidebar-title,
+.section-title,
+.queue-device {
+  letter-spacing: -0.02em;
+}
+
 .status-overview-card-repair {
   background: linear-gradient(180deg, #ffffff, #f5fbf8);
 }
@@ -1905,7 +1924,7 @@ body {
 
 .dashboard-process-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1rem;
 }
 
@@ -2013,6 +2032,11 @@ body {
   color: var(--text-primary);
 }
 
+.hero-spotlight-card-light .sidebar-title {
+  font-size: 1.08rem;
+  line-height: 1.2;
+}
+
 .inbox-summary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -2076,6 +2100,16 @@ body {
   background: linear-gradient(180deg, #ffffff, #f4f8f6);
 }
 
+.section-heading {
+  gap: 1rem;
+}
+
+.section-copy,
+.sidebar-copy {
+  max-width: 62ch;
+  line-height: 1.62;
+}
+
 .empty-filter-card {
   display: grid;
   gap: 0.55rem;
@@ -2135,7 +2169,7 @@ body {
   }
 
   .dashboard-process-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -2155,6 +2189,10 @@ body {
 @media (max-width: 640px) {
   .status-overview-grid,
   .inbox-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-process-grid {
     grid-template-columns: 1fr;
   }
 
