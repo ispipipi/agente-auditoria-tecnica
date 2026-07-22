@@ -6,19 +6,19 @@ const shellSections = {
     title: "Dashboard Ejecutivo",
     eyebrow: "Cockpit overview",
     copy: "Resumen ejecutivo consolidado de los procesos de auditoria vigentes.",
-    impact: "Conteo real por estado y drill-down directo a la operacion.",
+    impact: "Conteo real por estado.",
   },
   cases: {
     title: "Bandeja de Casos",
     eyebrow: "Audit workspace",
     copy: "Gestion centralizada para abrir tickets, revisar estados y simular cierres.",
-    impact: "Casos filtrables, recorrido claro y entrada manual en un solo lugar.",
+    impact: "Casos filtrables y demo manual.",
   },
   wizard: {
     title: "Analisis de Caso",
     eyebrow: "Live audit",
     copy: "Extraccion, criterio tecnico, payout y cierre en una secuencia controlada.",
-    impact: "Decision explicable con override y salida lista para presentar.",
+    impact: "Flujo guiado de 4 pasos.",
   },
 };
 
@@ -123,6 +123,7 @@ export function AppShell({ children }) {
   const completionRatio =
     dashboardMetrics.total > 0 ? Math.round((completedCases / dashboardMetrics.total) * 100) : 0;
   const primaryCtaLabel = getPrimaryCtaLabel(dashboardMetrics);
+  const isWizard = sectionKey === "wizard";
   const searchLabel = currentCase
     ? `Ticket ${currentCase.idTicket} · ${currentCase.tipoArtefacto} ${currentCase.marca}`
     : "Buscar ticket o artefacto...";
@@ -142,7 +143,7 @@ export function AppShell({ children }) {
   }
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${isWizard ? "app-shell-wizard" : ""}`}>
       <aside className="print-hidden app-sidebar">
         <div className="brand-lockup">
           <img alt="OnAssist" className="brand-logo" src={logoSrc} />
@@ -152,14 +153,16 @@ export function AppShell({ children }) {
           </div>
         </div>
 
-        <div className="sidebar-module">
-          <p className="sidebar-module-label">Demo interactiva</p>
-          <h2 className="sidebar-module-title">Operacion premium con criterio visible</h2>
-          <p className="sidebar-module-copy">
-            Un espacio ejecutivo para demostrar filtro documental, criterio tecnico, payout y
-            cierre con override en un solo recorrido.
-          </p>
-        </div>
+        {!isWizard ? (
+          <div className="sidebar-module">
+            <p className="sidebar-module-label">Demo interactiva</p>
+            <h2 className="sidebar-module-title">Operacion premium con criterio visible</h2>
+            <p className="sidebar-module-copy">
+              Un espacio ejecutivo para demostrar filtro documental, criterio tecnico, payout y
+              cierre con override en un solo recorrido.
+            </p>
+          </div>
+        ) : null}
 
         <nav className="app-sidebar-nav app-sidebar-nav-primary">
           {mainNavItems.map((item) => {
@@ -224,43 +227,47 @@ export function AppShell({ children }) {
           </div>
         )}
 
-        <div className="sidebar-module sidebar-module-compact">
-          <p className="sidebar-module-label">Momentum de demo</p>
-          <div className="sidebar-metric-row">
-            <span>Casos cerrados</span>
-            <strong>
-              {completedCases}/{dashboardMetrics.total}
-            </strong>
-          </div>
-          <div className="sidebar-progress">
-            <span className="sidebar-progress-fill" style={{ width: `${completionRatio}%` }} />
-          </div>
-          <div className="sidebar-metric-stack">
-            <div className="sidebar-metric-row">
-              <span>Overrides</span>
-              <strong>{dashboardMetrics.overridesApplied}</strong>
+        {!isWizard ? (
+          <>
+            <div className="sidebar-module sidebar-module-compact">
+              <p className="sidebar-module-label">Momentum de demo</p>
+              <div className="sidebar-metric-row">
+                <span>Casos cerrados</span>
+                <strong>
+                  {completedCases}/{dashboardMetrics.total}
+                </strong>
+              </div>
+              <div className="sidebar-progress">
+                <span className="sidebar-progress-fill" style={{ width: `${completionRatio}%` }} />
+              </div>
+              <div className="sidebar-metric-stack">
+                <div className="sidebar-metric-row">
+                  <span>Overrides</span>
+                  <strong>{dashboardMetrics.overridesApplied}</strong>
+                </div>
+                <div className="sidebar-metric-row">
+                  <span>Caso manual</span>
+                  <strong>{dashboardMetrics.hasManualCase ? "Activo" : "Disponible"}</strong>
+                </div>
+              </div>
             </div>
-            <div className="sidebar-metric-row">
-              <span>Caso manual</span>
-              <strong>{dashboardMetrics.hasManualCase ? "Activo" : "Disponible"}</strong>
-            </div>
-          </div>
-        </div>
 
-        <div className="sidebar-footer-links">
-          <button className="sidebar-footer-link" onClick={() => navigate("/casos#manual")} type="button">
-            <span className="sidebar-nav-icon">
-              <ShellIcon name="support" />
-            </span>
-            <span>Crear auditoria</span>
-          </button>
-          <button className="sidebar-footer-link" onClick={() => navigate("/")} type="button">
-            <span className="sidebar-nav-icon">
-              <ShellIcon name="account" />
-            </span>
-            <span>Vista ejecutiva</span>
-          </button>
-        </div>
+            <div className="sidebar-footer-links">
+              <button className="sidebar-footer-link" onClick={() => navigate("/casos#manual")} type="button">
+                <span className="sidebar-nav-icon">
+                  <ShellIcon name="support" />
+                </span>
+                <span>Crear auditoria</span>
+              </button>
+              <button className="sidebar-footer-link" onClick={() => navigate("/")} type="button">
+                <span className="sidebar-nav-icon">
+                  <ShellIcon name="account" />
+                </span>
+                <span>Vista ejecutiva</span>
+              </button>
+            </div>
+          </>
+        ) : null}
       </aside>
 
       <div className="app-main">
@@ -271,39 +278,51 @@ export function AppShell({ children }) {
                 <h2 className="topbar-title">{sectionMeta.title}</h2>
                 <p className="topbar-status">{sectionMeta.eyebrow}</p>
               </div>
-              <div className="topbar-search-shell" role="search">
-                <span className="topbar-search-icon">⌕</span>
-                <input aria-label="Buscar ticket o artefacto" readOnly value={searchLabel} />
-              </div>
+              {!isWizard ? (
+                <div className="topbar-search-shell" role="search">
+                  <span className="topbar-search-icon">⌕</span>
+                  <input aria-label="Buscar ticket o artefacto" readOnly value={searchLabel} />
+                </div>
+              ) : (
+                <p className="topbar-copy">{searchLabel}</p>
+              )}
             </div>
 
-            <nav className="topbar-nav">
-              {secondaryNavItems.map((item) => {
-                const isActive = sectionKey === item.key || (sectionKey === "wizard" && item.key === "wizard");
-                return (
-                  <Link
-                    className={`topbar-nav-link ${isActive ? "topbar-nav-link-active" : ""}`}
-                    key={item.key}
-                    to={item.to}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
+            {!isWizard ? (
+              <nav className="topbar-nav">
+                {secondaryNavItems.map((item) => {
+                  const isActive = sectionKey === item.key || (sectionKey === "wizard" && item.key === "wizard");
+                  return (
+                    <Link
+                      className={`topbar-nav-link ${isActive ? "topbar-nav-link-active" : ""}`}
+                      key={item.key}
+                      to={item.to}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </nav>
+            ) : (
+              <div className="topbar-flow-pill">{sectionMeta.impact}</div>
+            )}
 
             <div className="topbar-actions">
-              <div className="topbar-value-card">
-                <p className="topbar-value-label">Valor visible</p>
-                <strong>{sectionMeta.impact}</strong>
-              </div>
-              <button className="secondary-button secondary-button-compact" onClick={() => navigate("/casos#manual")} type="button">
-                Nueva auditoria
-              </button>
+              {!isWizard ? (
+                <>
+                  <div className="topbar-value-card">
+                    <p className="topbar-value-label">Valor visible</p>
+                    <strong>{sectionMeta.impact}</strong>
+                  </div>
+                  <button className="secondary-button secondary-button-compact" onClick={() => navigate("/casos#manual")} type="button">
+                    Nueva auditoria
+                  </button>
+                </>
+              ) : null}
               <button className="secondary-button" onClick={handleResetDemo} type="button">
                 Reiniciar
               </button>
-              {nextCase ? (
+              {!isWizard && nextCase ? (
                 <button
                   className="primary-button"
                   onClick={() => navigate(getCaseRoute(nextCase))}

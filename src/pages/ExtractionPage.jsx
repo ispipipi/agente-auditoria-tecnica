@@ -50,27 +50,20 @@ export function ExtractionPage() {
           </div>
         }
       >
-        <div className="analysis-grid">
-          <div className="analysis-column">
-            <div className="value-banner">
-              <div>
-                <p className="section-kicker">Valor para la operacion</p>
-                <h3 className="section-title small">
-                  Bloquea expedientes debiles antes de consumir revision especializada.
-                </h3>
-              </div>
-              <div className="value-banner-metrics">
-                <div className="value-banner-stat">
-                  <strong>Gate documental</strong>
-                  <span>Solo avanza lo que esta listo para decision.</span>
-                </div>
-                <div className="value-banner-stat">
-                  <strong>Menos reproceso</strong>
-                  <span>Menos idas y vueltas con antecedentes incompletos.</span>
-                </div>
-              </div>
+        <div className="analysis-grid single-flow">
+          <div className="info-strip">
+            <div>
+              <p className="section-kicker">Que hace este paso</p>
+              <h3 className="section-title small">Valida si el caso tiene lo minimo para seguir.</h3>
             </div>
+            <div className="info-strip-points">
+              <span>Revisa integridad</span>
+              <span>Evita reproceso</span>
+              <span>Define si avanza o se detiene</span>
+            </div>
+          </div>
 
+          <div className="analysis-column">
             <div className="info-card">
               <div className="section-heading compact">
                 <div>
@@ -223,11 +216,9 @@ export function ExtractionPage() {
                 </>
               )}
             </div>
-          </div>
 
-          <div className="analysis-column">
             <div className="info-card">
-              <p className="section-kicker">Gate de calidad documental</p>
+              <p className="section-kicker">Checklist del paso</p>
               <div className="checklist-stack">
                 <ValidationRow
                   editable={isManualCase}
@@ -264,7 +255,7 @@ export function ExtractionPage() {
             ) : null}
 
             <div className={`info-card ${analysis.missingFields.length > 0 ? "info-card-alert" : ""}`}>
-              <p className="section-kicker">Decision del filtro inicial</p>
+              <p className="section-kicker">Resultado del filtro</p>
               <h3 className="section-title">
                 {analysis.missingFields.length > 0
                   ? "Caso incompleto: no conviene seguir sin corregir"

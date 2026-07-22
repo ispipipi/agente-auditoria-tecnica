@@ -83,13 +83,14 @@ export function WizardFrame({
           </div>
 
           <div className="wizard-progress-panel">
-            <div>
-              <p className="field-label">Valor de esta etapa</p>
-              <div className="wizard-value-chip">{currentStepMeta.value}</div>
-            </div>
             <div className="wizard-progress-metric">
-              <strong>{completionValue}%</strong>
-              <span>{currentStep + 1} de 4 etapas</span>
+              <p className="field-label">Paso actual</p>
+              <strong>{currentStep + 1} de 4</strong>
+              <span>{currentStepMeta.title}</span>
+            </div>
+            <div>
+              <p className="field-label">Objetivo</p>
+              <div className="wizard-value-chip">{currentStepMeta.value}</div>
             </div>
             <p className="wizard-progress-copy">{currentStepMeta.copy}</p>
             <div className="progress-track wizard-progress-track">
@@ -113,18 +114,18 @@ export function WizardFrame({
                 >
                   <div className="step-index">{isComplete ? "OK" : `0${index + 1}`}</div>
                   <div>
-                    <p className="step-label">Paso {index + 1}</p>
                     <p className="step-title">{step.title}</p>
-                    <p className="step-copy">{step.copy}</p>
+                    <p className="step-status-copy">
+                      {isActive ? "Paso actual" : isComplete ? "Completado" : "Pendiente"}
+                    </p>
                   </div>
                 </Link>
               ) : (
                 <div className="step-card step-card-disabled" key={step.path}>
                   <div className="step-index">{`0${index + 1}`}</div>
                   <div>
-                    <p className="step-label">Paso {index + 1}</p>
                     <p className="step-title">{step.title}</p>
-                    <p className="step-copy">{step.copy}</p>
+                    <p className="step-status-copy">Pendiente</p>
                   </div>
                 </div>
               );
@@ -140,35 +141,24 @@ export function WizardFrame({
       </section>
 
       <aside className="wizard-aside">
-        <div className="summary-card summary-card-dark">
+        <div className="summary-card summary-card-compact">
           <p className="summary-kicker">Resumen del caso</p>
-          <dl className="summary-list">
+          <dl className="summary-list summary-list-compact">
             <div>
               <dt>Cliente</dt>
               <dd>{caseItem.nCliente}</dd>
             </div>
             <div>
-              <dt>Componentes</dt>
+              <dt>Artefacto</dt>
+              <dd>
+                {caseItem.tipoArtefacto} {caseItem.marca}
+              </dd>
+            </div>
+            <div>
+              <dt>Componente</dt>
               <dd>{caseItem.componentesDeteriorados}</dd>
             </div>
-            <div>
-              <dt>Servicio tecnico</dt>
-              <dd>{caseItem.razonSocialServicio}</dd>
-            </div>
-            <div>
-              <dt>Tecnico responsable</dt>
-              <dd>{caseItem.tecnicoResponsable}</dd>
-            </div>
           </dl>
-        </div>
-
-        <div className="summary-card summary-card-highlight">
-          <p className="summary-kicker">Narrativa demo</p>
-          <h3 className="section-title small">La plataforma filtra, decide y documenta sin perder control humano.</h3>
-          <p className="section-copy">
-            Cada etapa aporta un argumento distinto para el sponsor: menos reproceso, criterio
-            consistente, payout visible y salida lista para cierre.
-          </p>
         </div>
 
         <div className="summary-card">
