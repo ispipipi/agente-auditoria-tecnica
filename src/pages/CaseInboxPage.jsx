@@ -162,6 +162,23 @@ export function CaseInboxPage() {
               <span className="hero-stat-copy">cierre con trazabilidad lista para cliente o sponsor</span>
             </div>
           </div>
+
+          <div className="demo-agenda-card">
+            <div className="demo-agenda-copy">
+              <p className="section-kicker">Guion recomendado</p>
+              <h3 className="section-title small">Demo de 3 minutos con relato claro de valor</h3>
+              <p className="section-copy">
+                Abre con un caso atribuible, muestra la explicacion tecnica, aterriza la regla
+                financiera y cierra con control humano visible.
+              </p>
+            </div>
+            <div className="demo-agenda-steps">
+              <span>1. Filtro</span>
+              <span>2. Decision</span>
+              <span>3. Payout</span>
+              <span>4. Cierre</span>
+            </div>
+          </div>
         </div>
 
         <div className="dashboard-hero-panel">
@@ -183,6 +200,11 @@ export function CaseInboxPage() {
                   ? "Ideal para mostrar flexibilidad: edicion en vivo, recálculo y override con control."
                   : `${playbookLabels[nextCase.escenario]}. Perfecto para abrir la conversacion sobre valor operacional.`}
             </p>
+            <div className="hero-spotlight-points">
+              <span>Impacto visible en menos de 1 minuto</span>
+              <span>Decision entendible para negocio y tecnica</span>
+              <span>Salida final lista para defender</span>
+            </div>
           </div>
 
           <p className="panel-kicker">Recorrido de venta</p>
@@ -240,6 +262,24 @@ export function CaseInboxPage() {
           copy="El analista conserva la última palabra y la salida queda lista para presentar o exportar."
           kicker="3. Cierra mejor"
           title="Acelera el cierre sin perder control humano"
+        />
+      </section>
+
+      <section className="demo-script-grid">
+        <ValueProofCard
+          kicker="Momento 1"
+          title="Abre con un caso facil de entender"
+          copy="El escenario aprobado permite explicar rapidamente por que la plataforma acelera una resolucion que ya era probable."
+        />
+        <ValueProofCard
+          kicker="Momento 2"
+          title="Muestra un rechazo tecnico defendible"
+          copy="El escenario rechazado deja claro que la plataforma no solo aprueba: también protege criterio y consistencia."
+        />
+        <ValueProofCard
+          kicker="Momento 3"
+          title="Cierra con una salida lista para sponsor"
+          copy="La pantalla final convierte analisis tecnico en una recomendacion ejecutiva con override y trazabilidad."
         />
       </section>
 
@@ -339,6 +379,11 @@ export function CaseInboxPage() {
                 ? "Usa este ticket para mostrar flexibilidad operativa y cambios en vivo sin depender del mock."
                 : `${playbookLabels[nextCase.escenario]}. Ideal para abrir la demo con una historia simple y convincente.`}
             </p>
+            <div className="sidebar-value-list">
+              <span>Lectura rapida del caso</span>
+              <span>Explicacion comercial simple</span>
+              <span>Cierre defendible frente a sponsor</span>
+            </div>
             <button className="primary-button w-full" onClick={() => openCase(nextCase)} type="button">
               {dashboardMetrics.inReview > 0 ? "Retomar caso activo" : "Abrir caso sugerido"}
             </button>
@@ -358,6 +403,14 @@ export function CaseInboxPage() {
               Completa solo la informacion minima y demuestra como la plataforma se adapta a un
               caso nuevo, recalcula y deja trazabilidad sin perder consistencia.
             </p>
+
+            <div className="manual-hint-card">
+              <strong>Ideal para demo consultiva</strong>
+              <span>
+                Usa este bloque cuando quieras demostrar flexibilidad y responder a un caso real
+                que proponga el cliente en la reunion.
+              </span>
+            </div>
 
             {showManualForm ? (
               <form className="manual-case-form" onSubmit={handleManualSubmit}>

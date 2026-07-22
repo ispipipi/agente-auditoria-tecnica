@@ -96,6 +96,27 @@ export function ResultPage() {
         }
       >
         <div className="space-y-6">
+          <div className="executive-strip">
+            <div>
+              <p className="section-kicker">Salida ejecutiva</p>
+              <h3 className="section-title small">Un cierre que el equipo tecnico puede explicar y negocio puede presentar.</h3>
+            </div>
+            <div className="executive-strip-metrics">
+              <div>
+                <strong>{effectiveDecision}</strong>
+                <span>Decision final visible</span>
+              </div>
+              <div>
+                <strong>{override?.intervencionHumana ? "Con override" : "Sin override"}</strong>
+                <span>Control humano trazado</span>
+              </div>
+              <div>
+                <strong>{formatCurrency(caseItem.presupuestoReparacion)}</strong>
+                <span>Salida economica lista</span>
+              </div>
+            </div>
+          </div>
+
           <div className="value-banner">
             <div>
               <p className="section-kicker">Valor de cierre</p>
@@ -201,6 +222,11 @@ export function ResultPage() {
                   con trazabilidad obligatoria.
                 </p>
 
+                <div className="decision-room-card">
+                  <strong>Lo que demuestra esta pantalla</strong>
+                  <span>La plataforma recomienda, negocio entiende y el analista conserva la ultima palabra.</span>
+                </div>
+
                 {!isClosed ? (
                   <div className="action-stack">
                     <button className="primary-button w-full" onClick={handleApprove} type="button">
@@ -273,6 +299,15 @@ export function ResultPage() {
                     <p className="note-copy">{override.comentarioOverride}</p>
                   </div>
                 ) : null}
+
+                <div className="handoff-card">
+                  <p className="field-label">Checklist de salida</p>
+                  <ul className="value-list">
+                    <li>Decision final visible para sponsor.</li>
+                    <li>Trazabilidad lista para auditoria interna.</li>
+                    <li>Vista preparada para PDF o impresion.</li>
+                  </ul>
+                </div>
               </div>
 
               <div className="print-only info-card">
