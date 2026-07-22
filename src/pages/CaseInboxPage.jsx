@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { AppShell } from "../components/AppShell";
 import { CaseStatusBadge } from "../components/CaseStatusBadge";
 import { WorkflowStateBadge } from "../components/WorkflowStateBadge";
@@ -42,6 +42,7 @@ function buildManualFormState(manualCase) {
 
 export function CaseInboxPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const {
     cases,
@@ -124,52 +125,76 @@ export function CaseInboxPage() {
     });
   }, [showManualForm]);
 
+  useEffect(() => {
+    if (location.hash !== "#manual") return;
+    setShowManualForm(true);
+  }, [location.hash]);
+
   return (
     <AppShell>
-      <section className="page-hero page-hero-compact">
+      <section className="page-intro">
         <div>
-          <span className="hero-pill">Bandeja de Casos</span>
-          <h2 className="page-title">Una vista operacional clara para demostrar criterio y cierre.</h2>
+          <span className="hero-pill">Vista Ejecutiva</span>
+          <h1 className="page-title page-title-accent">Bandeja de Auditoria</h1>
           <p className="page-copy">
-            Abre cualquier caso, retoma donde quedo la simulacion o filtra por el resultado que
-            quieras presentar al cliente.
+            Gestion centralizada de revisiones tecnicas y reclamaciones de garantia con ejemplos
+            precargados y entrada manual lista para demo consultiva.
           </p>
         </div>
 
-        <div className="inbox-summary-grid">
-          <SummaryChip label="Reparacion" value={executiveOverview.repair} />
-          <SummaryChip label="Indemnizacion" value={executiveOverview.indemnify} />
-          <SummaryChip label="Rechazado" value={executiveOverview.reject} />
-          <SummaryChip label="Incompleto" value={executiveOverview.incomplete} />
+        <div className="hero-actions">
+          <button className="secondary-button" onClick={() => window.print()} type="button">
+            Exportar
+          </button>
+          <button className="primary-button" onClick={() => setShowManualForm(true)} type="button">
+            Crear auditoria
+          </button>
         </div>
       </section>
 
+      {filterKey && FILTER_LABELS[filterKey] ? (
+        <div className="filter-chip-row">
+          <span className="filter-chip">
+            Filtrando por: <strong>{FILTER_LABELS[filterKey]}</strong>
+          </span>
+          <button className="link-button" onClick={clearFilter} type="button">
+            Limpiar filtros
+          </button>
+        </div>
+      ) : null}
+
+      <section className="stats-grid">
+        <SummaryStatCard
+          copy="Casos activos"
+          label="Carga de trabajo"
+          tone="primary"
+          value={`${filteredCases.length}`}
+        />
+        <SummaryStatCard
+          copy="+2.1% desde ayer"
+          label="Tasa de aprobacion"
+          tone="success"
+          value={`${Math.max(78, Math.round((executiveOverview.repair / Math.max(1, cases.length)) * 100))}%`}
+        />
+        <SummaryStatCard
+          copy="Cerca del limite critico"
+          label="SLA promedio"
+          tone="warning"
+          value={dashboardMetrics.inReview > 0 ? "2.4h" : "4.2h"}
+        />
+      </section>
+
       <section className="queue-layout">
-        <div className="surface-card">
-          <div className="section-heading">
-            <div>
-              <p className="section-kicker">Operacion filtrable</p>
-              <h3 className="section-title">Bandeja lista para recorrer la demo completa</h3>
+        <div className="surface-card surface-card-table">
+          <div className="queue-table">
+            <div className="queue-table-head">
+              <span>ID ticket</span>
+              <span>Artefacto (marca/modelo)</span>
+              <span>Estado</span>
+              <span>Progreso</span>
+              <span>Accion</span>
             </div>
 
-            {filterKey && FILTER_LABELS[filterKey] ? (
-              <div className="filter-chip-row">
-                <span className="filter-chip">
-                  Filtrando por: <strong>{FILTER_LABELS[filterKey]}</strong>
-                </span>
-                <button className="secondary-button" onClick={clearFilter} type="button">
-                  Limpiar filtros
-                </button>
-              </div>
-            ) : (
-              <p className="section-copy">
-                Cada ticket abre una historia distinta: aprobacion, rechazo, alerta documental,
-                indemnizacion o stress test manual.
-              </p>
-            )}
-          </div>
-
-          <div className="queue-list">
             {filteredCases.length > 0 ? (
               filteredCases.map((caseItem) => {
                 const state = getCaseState(caseItem);
@@ -179,67 +204,51 @@ export function CaseInboxPage() {
                 const presentationState = getPresentationState(caseItem);
 
                 return (
-                  <button
-                    className="queue-row"
-                    key={caseItem.idTicket}
-                    onClick={() => openCase(caseItem)}
-                    type="button"
-                  >
-                    <div className="queue-row-main">
-                      <div className="queue-row-heading">
-                        <div>
-                          <p className="queue-ticket">Ticket {caseItem.idTicket}</p>
-                          <h4 className="queue-device">
-                            {caseItem.tipoArtefacto} {caseItem.marca} {caseItem.modelo}
-                          </h4>
-                          <p className="queue-copy">
-                            {caseItem.descripcionCausaFalla || "Caso listo para completar en vivo."}
-                          </p>
-                        </div>
+                  <div className="queue-table-row" key={caseItem.idTicket}>
+                    <div className="queue-table-ticket">
+                      <strong>#{caseItem.idTicket}</strong>
+                      <span>
+                        {caseItem.caseOrigin === "manual"
+                          ? "Ingreso manual"
+                          : `Escenario ${caseItem.escenario}`}
+                      </span>
+                    </div>
 
-                        <div className="queue-badges">
-                          <WorkflowStateBadge state={state.status} />
-                          <CaseStatusBadge
-                            decision={finalDecision}
-                            pendingLabel={presentationState.label}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="queue-meta">
-                        <span className="meta-chip">
-                          {caseItem.caseOrigin === "manual" ? "Ingreso manual" : `Escenario ${caseItem.escenario}`}
-                        </span>
-                        <span className="meta-chip">
-                          {state.status === "closed"
-                            ? "Cierre completado"
-                            : state.status === "in_review"
-                              ? "Flujo en curso"
-                              : "Sin iniciar"}
-                        </span>
-                        <span className="meta-chip">
-                          {caseItem.evidenciaFotografica ? "Con evidencia" : "Sin evidencia"}
-                        </span>
+                    <div className="queue-table-device">
+                      <span className="queue-table-icon">{caseItem.tipoArtefacto.slice(0, 2)}</span>
+                      <div>
+                        <strong>
+                          {caseItem.tipoArtefacto} {caseItem.marca}
+                        </strong>
+                        <p>{caseItem.modelo}</p>
                       </div>
                     </div>
 
-                    <div className="queue-row-side">
-                      <div>
-                        <p className="queue-side-label">Progreso</p>
-                        <p className="queue-side-value">{progress}%</p>
-                      </div>
+                    <div className="queue-table-status">
+                      <CaseStatusBadge
+                        decision={finalDecision}
+                        pendingLabel={presentationState.label}
+                      />
+                      <WorkflowStateBadge state={state.status} />
+                    </div>
+
+                    <div className="queue-table-progress">
                       <div className="progress-track">
                         <span className="progress-fill" style={{ width: `${progress}%` }} />
                       </div>
-                      <span className="queue-link">
-                        {state.status === "new"
-                          ? "Comenzar analisis"
-                          : state.status === "closed"
-                            ? "Ver cierre del caso"
-                            : "Continuar flujo"}
-                      </span>
+                      <span>{progress}%</span>
                     </div>
-                  </button>
+
+                    <div className="queue-table-action">
+                      <button className="table-action-button" onClick={() => openCase(caseItem)} type="button">
+                        {state.status === "new"
+                          ? "Abrir caso"
+                          : state.status === "closed"
+                            ? "Ver cierre"
+                            : "Continuar"}
+                      </button>
+                    </div>
+                  </div>
                 );
               })
             ) : (
@@ -254,7 +263,7 @@ export function CaseInboxPage() {
           </div>
         </div>
 
-        <div className="sidebar-stack">
+        <div className="dashboard-side-column">
           <div className="surface-card surface-card-accent">
             <p className="panel-kicker">Recorrido recomendado</p>
             <h3 className="sidebar-title">
@@ -432,11 +441,12 @@ export function CaseInboxPage() {
   );
 }
 
-function SummaryChip({ label, value }) {
+function SummaryStatCard({ label, value, copy, tone }) {
   return (
-    <div className="summary-chip">
+    <div className="summary-stat-card">
       <span>{label}</span>
-      <strong>{value}</strong>
+      <strong className={`summary-stat-value tone-${tone}`}>{value}</strong>
+      <p>{copy}</p>
     </div>
   );
 }

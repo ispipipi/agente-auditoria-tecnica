@@ -8,41 +8,34 @@ const statusCards = [
   {
     key: "repair",
     label: "Reparacion",
+    tone: "success",
+    flag: "Real-time",
+    helper: "Activo",
     copy: "Casos atribuibles con reparacion viable por regla del 70%.",
   },
   {
     key: "indemnify",
     label: "Indemnizacion",
+    tone: "warning",
+    flag: "Pending",
+    helper: "Revision",
     copy: "Casos atribuibles donde conviene cerrar con payout.",
   },
   {
     key: "reject",
     label: "Rechazado",
+    tone: "danger",
+    flag: "Critical",
+    helper: "Accion requerida",
     copy: "Casos donde el criterio tecnico protege a la compania.",
   },
   {
     key: "incomplete",
     label: "Incompleto",
+    tone: "neutral",
+    flag: "Staged",
+    helper: "Sin datos",
     copy: "Expedientes que no deberian consumir revision avanzada.",
-  },
-];
-
-const journeySteps = [
-  {
-    title: "Recepcion y filtro",
-    copy: "Detecta documentos incompletos y evita reproceso desde el primer gate.",
-  },
-  {
-    title: "Criterio tecnico",
-    copy: "Explica por que un caso se acepta, se rechaza o requiere revision.",
-  },
-  {
-    title: "Regla financiera",
-    copy: "Simula payout y aterriza la decision tecnica en un cierre economico.",
-  },
-  {
-    title: "Cierre con override",
-    copy: "Mantiene la ultima palabra en manos del analista con trazabilidad clara.",
   },
 ];
 
@@ -67,6 +60,23 @@ export function DashboardPage() {
     () => cases.find((item) => getCaseState(item).status === "in_review") ?? null,
     [cases, getCaseState],
   );
+  const activityLog = useMemo(() => {
+    const trackedCases = cases.slice(0, 3);
+
+    return trackedCases.map((caseItem, index) => {
+      const presentationState = getPresentationState(caseItem);
+      return {
+        id: `${caseItem.idTicket}-${index}`,
+        time: `${12 + index}:${index === 0 ? "44" : index === 1 ? "42" : "39"}:${index === 2 ? "58" : "02"}`,
+        message:
+          index === 0
+            ? `AUTH: Ticket ${caseItem.idTicket} cargado para ${presentationState.label.toLowerCase()}.`
+            : index === 1
+              ? `AUDIT: Escenario ${caseItem.escenario} listo para abrir desde bandeja.`
+              : "EXPORT: Resumen ejecutivo disponible para presentar o imprimir.",
+      };
+    });
+  }, [cases, getPresentationState]);
 
   function openNextCase() {
     const route =
@@ -76,51 +86,22 @@ export function DashboardPage() {
 
   return (
     <AppShell>
-      <section className="page-hero">
-        <div className="page-hero-copy">
-          <span className="hero-pill">Dashboard Ejecutivo</span>
-          <h2 className="page-title">
-            Una demo que hace obvio donde la plataforma ahorra tiempo, estandariza criterio y
-            mejora el cierre.
-          </h2>
+      <section className="page-intro page-intro-split">
+        <div>
+          <h1 className="page-title">Technical Intelligence Portal</h1>
           <p className="page-copy">
-            Parte con el resumen agregado, entra a la bandeja filtrada con un clic y recorre un
-            caso completo sin perder la narrativa comercial.
+            Resumen ejecutivo consolidado de los procesos de auditoria vigentes con acceso directo
+            a casos, simulacion completa y cierre explicable.
           </p>
-
-          <div className="hero-actions">
-            <button className="primary-button" onClick={openNextCase} type="button">
-              {dashboardMetrics.inReview > 0 ? "Retomar caso en curso" : "Iniciar demo recomendada"}
-            </button>
-            <button className="secondary-button" onClick={() => navigate("/casos")} type="button">
-              Ir a bandeja de casos
-            </button>
-          </div>
         </div>
 
-        <div className="surface-card dashboard-hero-panel">
-          <p className="panel-kicker">Caso sugerido</p>
-          <div className="hero-spotlight-card hero-spotlight-card-light">
-            <div className="hero-spotlight-row">
-              <span className="meta-chip">
-                {nextCase.caseOrigin === "manual" ? "Ingreso manual" : `Escenario ${nextCase.escenario}`}
-              </span>
-              <WorkflowStateBadge state={getCaseState(nextCase).status} />
-            </div>
-            <h3 className="sidebar-title">
-              {nextCase.tipoArtefacto} {nextCase.marca} {nextCase.modelo}
-            </h3>
-            <p className="sidebar-copy">
-              {dashboardMetrics.inReview > 0
-                ? "Retoma exactamente donde quedo la simulacion para no romper el relato."
-                : "El caso recomendado abre la demo con valor visible, decision explicable y cierre defendible."}
-            </p>
-            <div className="hero-spotlight-points hero-spotlight-points-light">
-              <span>Conteo ejecutivo con base real</span>
-              <span>Drill-down directo a la bandeja</span>
-              <span>Flujo completo hasta PDF u override</span>
-            </div>
-          </div>
+        <div className="hero-actions">
+          <button className="secondary-button" onClick={() => navigate("/casos")} type="button">
+            Historial
+          </button>
+          <button className="secondary-button" onClick={() => window.print()} type="button">
+            Exportar
+          </button>
         </div>
       </section>
 
@@ -132,88 +113,108 @@ export function DashboardPage() {
             onClick={() => navigate(`/casos?estado=${card.key}`)}
             type="button"
           >
-            <div className="status-overview-top">
-              <span className="status-overview-label">{card.label}</span>
-              <span className="status-overview-link">Ver casos</span>
+            <div className="status-overview-header">
+              <span className={`status-overview-icon tone-${card.tone}`}>{card.label.slice(0, 1)}</span>
+              <span className={`status-flag tone-${card.tone}`}>{card.flag}</span>
             </div>
-            <strong className="status-overview-value">{executiveOverview[card.key]}</strong>
-            <p className="status-overview-copy">{card.copy}</p>
+            <span className="status-overview-label">{card.label}</span>
+            <div className="status-overview-value-row">
+              <strong className="status-overview-value">{executiveOverview[card.key]}</strong>
+              <span className={`status-overview-helper tone-${card.tone}`}>{card.helper}</span>
+            </div>
+            <div className="status-overview-footer">
+              <span className="status-overview-copy">Filtrar bandeja</span>
+              <span className="status-overview-link">→</span>
+            </div>
           </button>
         ))}
       </section>
 
-      <section className="dashboard-detail-grid">
-        <div className="surface-card">
-          <div className="section-heading">
+      <section className="dashboard-reference-grid">
+        <div className="surface-card surface-card-table">
+          <div className="section-heading section-heading-divider">
             <div>
-              <p className="section-kicker">Recorrido del producto</p>
-              <h3 className="section-title">La historia completa cabe en una reunion corta</h3>
+              <h3 className="section-title">Flujo Tecnico Reciente</h3>
             </div>
-            <p className="section-copy">
-              Cada paso muestra un valor distinto: filtro, criterio, payout y control humano.
-            </p>
+            <span className="section-badge-muted">Live updates</span>
           </div>
 
-          <div className="dashboard-process-grid">
-            {journeySteps.map((step, index) => (
-              <div className="process-card" key={step.title}>
-                <span className="process-index">0{index + 1}</span>
-                <h4>{step.title}</h4>
-                <p>{step.copy}</p>
-              </div>
-            ))}
+          <div className="recent-flow-list">
+            {demoCases.map((caseItem) => {
+              const presentationState = getPresentationState(caseItem);
+              return (
+                <button
+                  className="recent-flow-row"
+                  key={caseItem.idTicket}
+                  onClick={() => navigate(getCaseRoute(caseItem))}
+                  type="button"
+                >
+                  <span className="recent-flow-icon">{caseItem.tipoArtefacto.slice(0, 2)}</span>
+                  <div className="recent-flow-copy">
+                    <strong>
+                      AUDIT-{caseItem.idTicket}-{presentationState.key.slice(0, 3).toUpperCase()}
+                    </strong>
+                    <p>
+                      {caseItem.tipoArtefacto} {caseItem.marca} {caseItem.modelo}
+                    </p>
+                  </div>
+                  <div className="recent-flow-status">
+                    <span className="queue-side-label">Estatus</span>
+                    <WorkflowStateBadge
+                      label={presentationState.label}
+                      state={getCaseState(caseItem).status}
+                    />
+                  </div>
+                  <span className="recent-flow-arrow">›</span>
+                </button>
+              );
+            })}
           </div>
+
+          <button className="table-footer-button" onClick={() => navigate("/casos")} type="button">
+            Ver todos los casos registrados
+          </button>
         </div>
 
-        <div className="sidebar-stack">
-          <div className="surface-card">
-            <div className="section-heading compact">
-              <div>
-                <p className="panel-kicker">Base real del dashboard</p>
-                <h3 className="section-title small">Conteo vivo de los 4 casos mock</h3>
-              </div>
+        <div className="dashboard-side-column">
+          <div className="executive-dark-card">
+            <p className="panel-kicker">Auditoria activa</p>
+            <h3 className="dark-card-title">Seguridad Operativa</h3>
+            <p className="dark-card-copy">
+              {dashboardMetrics.inReview > 0
+                ? "Ya hay un recorrido abierto para continuar la demo sin reiniciar el relato."
+                : "Abre un caso sugerido y muestra el ciclo completo con criterio visible."}
+            </p>
+            <div className="dark-card-signal">
+              <span className="dark-card-bars" />
+              <span>
+                {nextCase.tipoArtefacto} {nextCase.marca}
+              </span>
             </div>
-            <div className="dashboard-facts-list">
-              {demoCases.map((caseItem) => {
-                const presentationState = getPresentationState(caseItem);
-
-                return (
-                  <div className="dashboard-fact-row" key={caseItem.idTicket}>
-                    <div>
-                      <p className="queue-ticket">Ticket {caseItem.idTicket}</p>
-                      <p className="dashboard-fact-copy">
-                        {caseItem.tipoArtefacto} {caseItem.marca} {caseItem.modelo}
-                      </p>
-                    </div>
-                    <span className={`state-pill state-pill-${presentationState.key}`}>
-                      {presentationState.label}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+            <button className="primary-button primary-button-light" onClick={openNextCase} type="button">
+              {dashboardMetrics.inReview > 0 ? "Retomar caso activo" : "Iniciar demo recomendada"}
+            </button>
           </div>
 
-          <div className="surface-card surface-card-accent">
-            <p className="panel-kicker">Momento de venta</p>
-            <h3 className="sidebar-title">Lo que el sponsor deberia entender al minuto uno</h3>
-            <p className="sidebar-copy">
-              Que la plataforma filtra mejor, decide con criterio consistente y deja un cierre
-              listo para defender frente a negocio.
-            </p>
-            <div className="sidebar-value-list">
-              <span>Menos lectura manual</span>
-              <span>Decision mas consistente</span>
-              <span>Override con trazabilidad</span>
+          <div className="surface-card">
+            <p className="panel-kicker">Logs tecnicos</p>
+            <div className="activity-log-list">
+              {activityLog.map((item) => (
+                <div className="activity-log-row" key={item.id}>
+                  <span>{item.time}</span>
+                  <p>{item.message}</p>
+                </div>
+              ))}
             </div>
           </div>
 
           {inReviewCase ? (
             <div className="surface-card">
               <p className="panel-kicker">Caso en progreso</p>
-              <h3 className="section-title small">Ya hay una simulacion abierta</h3>
+              <h3 className="section-title small">La simulacion quedo abierta</h3>
               <p className="section-copy">
-                Puedes retomarla para continuar la historia sin reiniciar el recorrido.
+                Puedes retomar el ticket actual o entrar a la bandeja para cambiar la historia que
+                quieres contar.
               </p>
               <button className="primary-button w-full" onClick={() => navigate(getCaseRoute(inReviewCase))} type="button">
                 Retomar ticket {inReviewCase.idTicket}

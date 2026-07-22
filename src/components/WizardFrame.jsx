@@ -83,9 +83,11 @@ export function WizardFrame({
           </div>
 
           <div className="wizard-progress-panel">
-            <p className="field-label">Valor de esta etapa</p>
-            <div className="wizard-value-chip">{currentStepMeta.value}</div>
-            <div className="wizard-progress-heading">
+            <div>
+              <p className="field-label">Valor de esta etapa</p>
+              <div className="wizard-value-chip">{currentStepMeta.value}</div>
+            </div>
+            <div className="wizard-progress-metric">
               <strong>{completionValue}%</strong>
               <span>{currentStep + 1} de 4 etapas</span>
             </div>
@@ -158,6 +160,15 @@ export function WizardFrame({
               <dd>{caseItem.tecnicoResponsable}</dd>
             </div>
           </dl>
+        </div>
+
+        <div className="summary-card summary-card-highlight">
+          <p className="summary-kicker">Narrativa demo</p>
+          <h3 className="section-title small">La plataforma filtra, decide y documenta sin perder control humano.</h3>
+          <p className="section-copy">
+            Cada etapa aporta un argumento distinto para el sponsor: menos reproceso, criterio
+            consistente, payout visible y salida lista para cierre.
+          </p>
         </div>
 
         <div className="summary-card">
